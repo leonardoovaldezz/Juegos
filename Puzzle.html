@@ -2,167 +2,380 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Block Puzzle JavaScript</title>
     <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #FF6B6B;
+            --text-color: white;
+            --board-bg: rgba(0, 0, 0, 0.4);
+        }
+        
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
         body {
             margin: 0;
-            padding: 20px;
+            padding: 2vmin;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             font-family: 'Arial', sans-serif;
+            overflow-x: hidden;
+            touch-action: manipulation;
         }
         
         #gameContainer {
             text-align: center;
             background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
+            padding: 3vmin;
             border-radius: 15px;
             backdrop-filter: blur(10px);
-            max-width: 800px;
+            width: 100%;
+            max-width: 1600px;
             position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 3vmin;
+        }
+        
+        #gameHeader {
+            display: flex;
+            flex-direction: column;
+            gap: 2vmin;
+            align-items: center;
+        }
+        
+        .game-title {
+            color: #FFD700;
+            font-size: clamp(24px, 6vmin, 48px);
+            margin: 0;
+            text-shadow: 3px 3px 0 #000;
+            font-weight: bold;
+            order: 1;
         }
         
         #gameInfo {
-            display: flex;
-            justify-content: space-around;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2vmin;
             background: rgba(0, 0, 0, 0.3);
             color: white;
-            padding: 15px;
+            padding: 2vmin;
             border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 18px;
+            font-size: clamp(14px, 3vmin, 20px);
+            font-weight: bold;
+            order: 2;
+            width: 100%;
+            max-width: 600px;
         }
         
-        #gameBoards {
+        #gameInfo > div {
             display: flex;
-            gap: 30px;
+            flex-direction: column;
+            align-items: center;
             justify-content: center;
-            margin-bottom: 20px;
-            align-items: flex-start;
+        }
+        
+        .info-value {
+            font-size: clamp(16px, 4vmin, 24px);
+            color: #FFD700;
+            margin-top: 0.5vmin;
+        }
+        
+        .music-control {
+            position: absolute;
+            top: 2vmin;
+            right: 2vmin;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 1.5vmin;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: clamp(18px, 4vmin, 24px);
+            width: clamp(45px, 9vmin, 60px);
+            height: clamp(45px, 9vmin, 60px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+
+        .music-control:hover, .music-control:active {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+        
+        #gameContent {
+            display: flex;
+            flex-direction: column;
+            gap: 3vmin;
+        }
+        
+        /* LAYOUT PARA ESCRITORIO - Tablero grande a la izquierda, piezas a la derecha */
+        @media (min-width: 1024px) {
+            #gameContent {
+                flex-direction: row;
+                align-items: flex-start;
+                gap: 4vmin;
+            }
+            
+            #mainGameArea {
+                flex: 3;
+                display: flex;
+                flex-direction: column;
+                gap: 3vmin;
+            }
+            
+            #sidePanels {
+                flex: 2;
+                display: flex;
+                flex-direction: column;
+                gap: 3vmin;
+                min-width: 400px;
+            }
+            
+            #mainBoard {
+                max-width: 700px !important;
+                align-self: center;
+            }
+            
+            #currentPiecesArea {
+                order: 1;
+                height: auto;
+            }
+            
+            #nextPiecesArea {
+                order: 2;
+            }
+            
+            #nextPiecesBoard {
+                max-width: 100% !important;
+                height: 120px !important;
+            }
+        }
+        
+        /* LAYOUT PARA TABLETS */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            #gameContent {
+                flex-direction: column;
+            }
+            
+            #mainBoard {
+                max-width: 500px !important;
+            }
+            
+            #sidePanels {
+                display: flex;
+                flex-direction: row;
+                gap: 3vmin;
+            }
+            
+            #currentPiecesArea {
+                flex: 2;
+            }
+            
+            #nextPiecesArea {
+                flex: 1;
+            }
+            
+            #nextPiecesBoard {
+                height: 200px !important;
+            }
+        }
+        
+        /* ÁREA DE PIEZAS ACTUALES */
+        #currentPiecesArea {
+            order: 1;
+            padding: 3vmin;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            width: 100%;
+        }
+        
+        .current-pieces-title {
+            color: white;
+            font-size: clamp(16px, 3.5vmin, 22px);
+            margin-bottom: 2vmin;
+            font-weight: bold;
+        }
+
+        #currentPiecesBoard {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: var(--board-bg);
+            margin: 0 auto;
+            cursor: grab;
+            width: 100%;
+            max-width: 800px;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .touch-hint {
+            color: #FFD700;
+            font-size: clamp(12px, 2.5vmin, 16px);
+            margin: 1vmin 0 2vmin 0;
+            font-style: italic;
+        }
+        
+        /* BOTONES DE ROTACIÓN - MEJORADOS */
+        .rotate-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1vmin;
+            margin-top: 2vmin;
+            flex-wrap: wrap;
+        }
+
+        .rotate-btn {
+            background: #4ECDC4;
+            color: white;
+            border: none;
+            padding: 1vmin 2vmin;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: clamp(11px, 2.2vmin, 14px);
+            min-width: 80px;
+            min-height: 35px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s;
+            flex: 1;
+            max-width: 100px;
+        }
+
+        .rotate-btn:hover, .rotate-btn:active {
+            background: #3db8af;
+            transform: scale(1.05);
+        }
+        
+        /* ÁREA DEL TABLERO PRINCIPAL */
+        #mainGameArea {
+            order: 2;
         }
         
         .board {
             background: rgba(0, 0, 0, 0.2);
             border-radius: 10px;
-            padding: 10px;
+            padding: 2.5vmin;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         
         .board-title {
             color: white;
-            margin-bottom: 10px;
-            font-size: 16px;
+            margin-bottom: 2vmin;
+            font-size: clamp(16px, 3.5vmin, 22px);
             font-weight: bold;
+            text-align: center;
         }
         
         #mainBoard {
             border: 3px solid rgba(255, 255, 255, 0.3);
-            background: rgba(0, 0, 0, 0.4);
+            background: var(--board-bg);
             cursor: pointer;
+            width: 100%;
+            max-width: 500px;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* ÁREA DE PRÓXIMAS PIEZAS - HORIZONTAL EN MÓVIL */
+        #nextPiecesArea {
+            order: 3;
+            padding: 2vmin;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            width: 100%;
         }
         
         #nextPiecesBoard {
             border: 3px solid rgba(255, 255, 255, 0.3);
-            background: rgba(0, 0, 0, 0.4);
-            width: 150px;
-            height: 200px;
-        }
-        
-        #currentPiecesArea {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-        }
-        
-        #currentPiecesBoard {
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            background: rgba(0, 0, 0, 0.4);
+            background: var(--board-bg);
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             margin: 0 auto;
-            cursor: grab;
         }
         
+        /* CONTROLES */
         #controls {
-            margin: 20px 0;
+            order: 4;
+            margin: 2vmin 0;
+            display: flex;
+            justify-content: center;
+            gap: 2vmin;
+            flex-wrap: wrap;
         }
         
         button {
-            background: #FF6B6B;
+            background: var(--accent-color);
             color: white;
             border: none;
-            padding: 12px 25px;
-            font-size: 16px;
-            margin: 0 10px;
+            padding: 2vmin 4vmin;
+            font-size: clamp(14px, 3vmin, 18px);
             cursor: pointer;
             border-radius: 25px;
             font-weight: bold;
             transition: all 0.3s;
+            min-width: 140px;
+            min-height: 50px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
         
-        button:hover {
+        button:hover, button:active {
             background: #FF5252;
             transform: scale(1.05);
         }
         
-        #startScreen, #gameOverScreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
-            z-index: 1000;
-        }
-        
-        .hidden {
-            display: none !important;
-        }
-        
-        .game-title {
-            color: #FFD700;
-            font-size: 42px;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 0 #000;
-        }
-        
         .instructions {
+            order: 5;
             background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
+            padding: 3vmin;
             border-radius: 10px;
-            margin: 15px 0;
-            max-width: 500px;
+            max-width: 800px;
+            font-size: clamp(12px, 2.5vmin, 16px);
+            line-height: 1.5;
+            margin: 0 auto;
         }
         
-        .current-pieces-title {
-            color: white;
-            font-size: 18px;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
-
         #messageDisplay {
-            position: absolute;
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(255, 215, 0, 0.9);
+            background: rgba(255, 215, 0, 0.95);
             color: #000;
-            padding: 20px 40px;
-            border-radius: 10px;
-            font-size: 24px;
+            padding: 4vmin 6vmin;
+            border-radius: 15px;
+            font-size: clamp(20px, 5vmin, 32px);
             font-weight: bold;
             z-index: 100;
             display: none;
             animation: popIn 0.5s ease-out;
+            text-align: center;
+            max-width: 90vw;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            border: 3px solid #FFA500;
         }
 
         @keyframes popIn {
@@ -170,42 +383,101 @@
             70% { transform: translate(-50%, -50%) scale(1.1); }
             100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
         }
-
-        .rotate-buttons {
+        
+        /* PANTALLAS DE INICIO Y FIN */
+        #startScreen, #gameOverScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
             display: flex;
+            flex-direction: column;
             justify-content: center;
-            gap: 10px;
-            margin-top: 10px;
+            align-items: center;
+            font-size: clamp(16px, 4vmin, 24px);
+            z-index: 1000;
+            padding: 5vmin;
+            text-align: center;
         }
-
-        .rotate-btn {
-            background: #4ECDC4;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 12px;
+        
+        .hidden {
+            display: none !important;
         }
-
-        .music-control {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 18px;
+        
+        /* MEJORAS ESPECÍFICAS PARA MÓVILES */
+        @media (max-width: 767px) {
+            body {
+                padding: 1vmin;
+            }
+            
+            #gameContainer {
+                padding: 2vmin;
+                gap: 2vmin;
+            }
+            
+            #gameInfo {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 3vmin;
+                max-width: 100%;
+            }
+            
+            #currentPiecesBoard {
+                height: 120px;
+                max-width: 100%;
+            }
+            
+            #nextPiecesBoard {
+                height: 80px;
+                max-width: 100%;
+            }
+            
+            .rotate-buttons {
+                gap: 0.5vmin;
+                margin-top: 1vmin;
+            }
+            
+            .rotate-btn {
+                min-width: 70px;
+                min-height: 30px;
+                max-width: 80px;
+                font-size: 10px;
+                padding: 0.8vmin 1.5vmin;
+            }
+            
+            #mainBoard {
+                max-width: 95vw;
+            }
+            
+            button {
+                min-width: 120px;
+                min-height: 45px;
+                padding: 1.5vmin 3vmin;
+            }
         }
-
+        
+        /* ESTADOS TÁCTILES MEJORADOS */
+        @media (hover: none) and (pointer: coarse) {
+            button, .rotate-btn {
+                min-height: 44px;
+            }
+            
+            #mainBoard, #currentPiecesBoard {
+                cursor: default;
+            }
+        }
+        
         .dragging {
             opacity: 0.8;
-            transform: scale(1.1);
+            transform: scale(1.05);
             transition: all 0.2s;
             cursor: grabbing !important;
+        }
+
+        .placement-preview {
+            pointer-events: none;
         }
     </style>
 </head>
@@ -213,46 +485,55 @@
     <div id="gameContainer">
         <button class="music-control" onclick="toggleMusic()">🎵</button>
         
-        <h1 class="game-title">🧩 BLOCK PUZZLE 🧩</h1>
-        
-        <div id="gameInfo">
-            <div>Puntos: <span id="score">0</span></div>
-            <div>Líneas: <span id="lines">0</span></div>
-            <div>Nivel: <span id="level">1</span></div>
-            <div>Bloques: <span id="blocksPlaced">0</span></div>
+        <div id="gameHeader">
+            <h1 class="game-title">🧩 BLOCK PUZZLE 🧩</h1>
+            <div id="gameInfo">
+                <div>PUNTOS<br><span id="score" class="info-value">0</span></div>
+                <div>LÍNEAS<br><span id="lines" class="info-value">0</span></div>
+                <div>NIVEL<br><span id="level" class="info-value">1</span></div>
+                <div>BLOQUES<br><span id="blocksPlaced" class="info-value">0</span></div>
+            </div>
         </div>
 
         <div id="messageDisplay"></div>
         
-        <div id="gameBoards">
-            <div class="board">
-                <div class="board-title">TABLERO PRINCIPAL</div>
-                <canvas id="mainBoard" width="300" height="300"></canvas>
+        <div id="gameContent">
+            <!-- EN ESCRITORIO: Tablero grande a la izquierda -->
+            <div id="mainGameArea">
+                <div class="board">
+                    <div class="board-title">TABLERO PRINCIPAL</div>
+                    <canvas id="mainBoard"></canvas>
+                </div>
             </div>
             
-            <div class="board">
-                <div class="board-title">PRÓXIMAS PIEZAS</div>
-                <canvas id="nextPiecesBoard" width="150" height="200"></canvas>
-            </div>
-        </div>
-        
-        <div id="currentPiecesArea">
-            <div class="current-pieces-title">PIEZAS ACTUALES - Arrástralas al tablero</div>
-            <canvas id="currentPiecesBoard" width="450" height="100"></canvas>
-            <div class="rotate-buttons">
-                <button class="rotate-btn" onclick="rotatePiece(0)">↻ Pieza 1</button>
-                <button class="rotate-btn" onclick="rotatePiece(1)">↻ Pieza 2</button>
-                <button class="rotate-btn" onclick="rotatePiece(2)">↻ Pieza 3</button>
+            <!-- EN ESCRITORIO: Paneles laterales a la derecha -->
+            <div id="sidePanels">
+                <!-- Piezas actuales con botones arriba -->
+                <div id="currentPiecesArea">
+                    <div class="board-title">PRÓXIMAS PIEZAS</div>
+                    <canvas id="nextPiecesBoard"></canvas>
+                    <div class="current-pieces-title">PIEZAS ACTUALES</div>
+                    <div class="touch-hint">Toca y arrastra al tablero</div>
+                    
+                    <!-- Botones de rotación arriba de las piezas -->
+                    <div class="rotate-buttons">
+                        <button class="rotate-btn" onclick="rotatePiece(0)">↻ 1</button>
+                        <button class="rotate-btn" onclick="rotatePiece(1)">↻ 2</button>
+                        <button class="rotate-btn" onclick="rotatePiece(2)">↻ 3</button>
+                    </div>
+                    
+                    <canvas id="currentPiecesBoard"></canvas>
+                </div>
             </div>
         </div>
         
         <div id="controls">
-            <button onclick="resetGame()">REINICIAR</button>
+            <button onclick="resetGame()">REINICIAR JUEGO</button>
         </div>
         
         <div class="instructions">
-            <p>💡 <strong>Instrucciones:</strong></p>
-            <p>• Haz clic en una pieza y arrástrala al tablero principal</p>
+            <p>💡 <strong>INSTRUCCIONES:</strong></p>
+            <p>• Toca una pieza y arrástrala al tablero principal</p>
             <p>• Usa los botones para rotar cada pieza antes de colocarla</p>
             <p>• Completa líneas horizontales o verticales para ganar puntos</p>
             <p>• ¡Pierdes cuando no hay espacio para NINGUNA pieza!</p>
@@ -264,35 +545,35 @@
         <div class="instructions">
             <p>🎮 <strong>¿CÓMO JUGAR?</strong></p>
             <p>• Tienes 3 piezas para colocar en cada turno</p>
-            <p>• Arrástralas del área inferior al tablero</p>
+            <p>• Arrástralas al tablero principal</p>
             <p>• Rota las piezas para que encajen mejor</p>
-            <p>• Completa líneas para ganar puntos y bonos</p>
+            <p>• Completa líneas para ganar puntos y subir de nivel</p>
             <p>• ¡El juego termina cuando no puedes colocar NINGUNA pieza!</p>
         </div>
-        <button onclick="startGame()">¡COMENZAR!</button>
+        <button onclick="startGame()">¡COMENZAR JUEGO!</button>
     </div>
 
     <div id="gameOverScreen" class="hidden">
         <h1 class="game-title">💀 GAME OVER</h1>
-        <p>Puntuación final: <span id="finalScore">0</span></p>
-        <p>Líneas completadas: <span id="finalLines">0</span></p>
+        <p>Puntuación final: <span id="finalScore" class="info-value">0</span></p>
+        <p>Líneas completadas: <span id="finalLines" class="info-value">0</span></p>
         <button onclick="restartGame()">JUGAR DE NUEVO</button>
     </div>
 
     <!-- Audio elements -->
-    <audio id="backgroundMusic" loop>
+    <audio id="backgroundMusic" loop preload="auto">
         <source src="Musica/fondo.mp3" type="audio/mpeg">
     </audio>
-    <audio id="lineCompleteSound">
+    <audio id="lineCompleteSound" preload="auto">
         <source src="Musica/lineacompletada.mp3" type="audio/mpeg">
     </audio>
-    <audio id="piecePlaceSound">
+    <audio id="piecePlaceSound" preload="auto">
         <source src="Musica/game-start.mp3" type="audio/mpeg">
     </audio>
-    <audio id="gameOverSound">
+    <audio id="gameOverSound" preload="auto">
         <source src="Musica/game-over.mp3" type="audio/mpeg">
     </audio>
-    <audio id="rotateSound">
+    <audio id="rotateSound" preload="auto">
         <source src="Musica/girar.mp3" type="audio/mpeg">
     </audio>
 
@@ -312,8 +593,8 @@
         this.level = 1;
         this.blocksPlaced = 0;
         
-        this.cellSize = 30;
         this.boardSize = 10;
+        this.cellSize = 0;
         
         // Elementos de audio
         this.backgroundMusic = document.getElementById('backgroundMusic');
@@ -333,32 +614,91 @@
         this.dragStartY = 0;
         this.currentDragX = 0;
         this.currentDragY = 0;
+        this.activeTouchId = null;
+        this.lastTap = 0;
         
         this.init();
         this.setupEventListeners();
+        this.setupResponsiveBehavior();
+        this.preloadSounds();
+    }
+
+    preloadSounds() {
+        const sounds = [
+            this.backgroundMusic,
+            this.lineCompleteSound,
+            this.piecePlaceSound,
+            this.gameOverSound,
+            this.rotateSound
+        ];
+        
+        sounds.forEach(sound => {
+            sound.load();
+        });
+    }
+
+    setupResponsiveBehavior() {
+        this.resizeCanvases();
+        window.addEventListener('resize', () => {
+            this.resizeCanvases();
+            this.draw();
+        });
+    }
+
+    resizeCanvases() {
+        const isMobile = window.innerWidth < 768;
+        const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
+        const isDesktop = window.innerWidth >= 1024;
+        
+        // Tamaños optimizados para cada dispositivo
+        if (isMobile) {
+            this.cellSize = Math.min(window.innerWidth * 0.09, 40);
+        } else if (isTablet) {
+            this.cellSize = Math.min(window.innerWidth * 0.07, 50);
+        } else {
+            this.cellSize = Math.min(window.innerWidth * 0.06, 60);
+        }
+        
+        // Canvas principal - más grande en escritorio
+        const mainBoardSize = this.boardSize * this.cellSize;
+        this.mainCanvas.width = mainBoardSize;
+        this.mainCanvas.height = mainBoardSize;
+        this.mainCanvas.style.width = mainBoardSize + 'px';
+        this.mainCanvas.style.height = mainBoardSize + 'px';
+        
+        // Canvas de piezas actuales
+        const currentBoardWidth = isDesktop ? 400 : Math.min(800, window.innerWidth * 0.95);
+        const currentBoardHeight = isMobile ? 120 : (isDesktop ? 200 : 150);
+        this.currentCanvas.width = currentBoardWidth;
+        this.currentCanvas.height = currentBoardHeight;
+        this.currentCanvas.style.width = currentBoardWidth + 'px';
+        this.currentCanvas.style.height = currentBoardHeight + 'px';
+        
+        // Canvas de próximas piezas - horizontal
+        const nextBoardWidth = isMobile ? Math.min(400, window.innerWidth * 0.9) : 300;
+        const nextBoardHeight = isMobile ? 80 : (isDesktop ? 120 : 200);
+        this.nextCanvas.width = nextBoardWidth;
+        this.nextCanvas.height = nextBoardHeight;
+        this.nextCanvas.style.width = nextBoardWidth + 'px';
+        this.nextCanvas.style.height = nextBoardHeight + 'px';
+        
+        this.draw();
     }
 
     init() {
-        // Tablero principal (10x10)
         this.board = Array(this.boardSize).fill().map(() => Array(this.boardSize).fill(0));
-        
-        // Piezas actuales y siguientes
         this.currentPieces = [];
         this.nextPieces = [];
-        
-        // Generar ambas sets de piezas
         this.generateInitialPieces();
         this.updateUI();
     }
 
     generateInitialPieces() {
-        // Generar 3 piezas actuales
         this.currentPieces = [];
         for (let i = 0; i < 3; i++) {
             this.currentPieces.push(this.generateRandomPiece());
         }
         
-        // Generar 3 piezas siguientes
         this.nextPieces = [];
         for (let i = 0; i < 3; i++) {
             this.nextPieces.push(this.generateRandomPiece());
@@ -367,37 +707,25 @@
 
     generateRandomPiece() {
         const pieces = [
-            // Cuadrado 2x2
             { shape: [[1,1],[1,1]], size: 2 },
-            // L
             { shape: [[1,0],[1,0],[1,1]], size: 3 },
-            // L invertida
             { shape: [[0,1],[0,1],[1,1]], size: 3 },
-            // Línea horizontal
             { shape: [[1,1,1]], size: 3 },
-            // Línea vertical  
             { shape: [[1],[1],[1]], size: 3 },
-            // T
             { shape: [[1,1,1],[0,1,0]], size: 3 },
-            // Z
             { shape: [[1,1,0],[0,1,1]], size: 3 },
-            // S
             { shape: [[0,1,1],[1,1,0]], size: 3 },
-            // Punto
             { shape: [[1]], size: 1 },
-            // Cruz
             { shape: [[0,1,0],[1,1,1],[0,1,0]], size: 3 }
         ];
         
         const pieceTemplate = pieces[Math.floor(Math.random() * pieces.length)];
-        const piece = {
+        return {
             shape: JSON.parse(JSON.stringify(pieceTemplate.shape)),
             color: this.getRandomColor(),
             size: pieceTemplate.size,
             id: Math.random().toString(36).substr(2, 9)
         };
-        
-        return piece;
     }
 
     getRandomColor() {
@@ -406,40 +734,38 @@
     }
 
     setupEventListeners() {
-        // Eventos para el área de piezas actuales
         this.currentCanvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
-        this.currentCanvas.addEventListener('touchstart', (e) => this.handleTouchStart(e));
+        this.currentCanvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
         
-        // Eventos globales para el arrastre
         document.addEventListener('mousemove', (e) => this.handleMouseMove(e));
         document.addEventListener('mouseup', (e) => this.handleMouseUp(e));
-        document.addEventListener('touchmove', (e) => this.handleTouchMove(e));
+        document.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
         document.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+        document.addEventListener('touchcancel', (e) => this.handleTouchEnd(e));
         
-        // Prevenir comportamiento por defecto
         this.currentCanvas.addEventListener('dragstart', (e) => e.preventDefault());
+        this.currentCanvas.addEventListener('touchend', (e) => this.handleDoubleTap(e));
     }
 
     handleMouseDown(e) {
         if (this.gameState !== 'playing') return;
-        
         const rect = this.currentCanvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        
         this.startDrag(x, y, e.clientX, e.clientY);
     }
 
     handleTouchStart(e) {
         if (this.gameState !== 'playing') return;
-        e.preventDefault();
+        if (this.activeTouchId !== null) return;
         
         const touch = e.touches[0];
+        this.activeTouchId = touch.identifier;
         const rect = this.currentCanvas.getBoundingClientRect();
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
-        
         this.startDrag(x, y, touch.clientX, touch.clientY);
+        e.preventDefault();
     }
 
     startDrag(localX, localY, globalX, globalY) {
@@ -452,17 +778,13 @@
             this.dragStartY = globalY;
             this.currentDragX = globalX;
             this.currentDragY = globalY;
-            
-            // Añadir clase de arrastre al canvas
             this.currentCanvas.classList.add('dragging');
-            
             this.draw();
         }
     }
 
     handleMouseMove(e) {
         if (!this.isDragging) return;
-        
         this.currentDragX = e.clientX;
         this.currentDragY = e.clientY;
         this.draw();
@@ -470,54 +792,62 @@
 
     handleTouchMove(e) {
         if (!this.isDragging) return;
+        for (let touch of e.touches) {
+            if (touch.identifier === this.activeTouchId) {
+                this.currentDragX = touch.clientX;
+                this.currentDragY = touch.clientY;
+                this.draw();
+                break;
+            }
+        }
         e.preventDefault();
-        
-        const touch = e.touches[0];
-        this.currentDragX = touch.clientX;
-        this.currentDragY = touch.clientY;
-        this.draw();
     }
 
     handleMouseUp(e) {
         if (!this.isDragging) return;
-        
         const rect = this.mainCanvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        
         this.finishDrag(x, y);
     }
 
     handleTouchEnd(e) {
         if (!this.isDragging) return;
-        e.preventDefault();
-        
         const touch = e.changedTouches[0];
         const rect = this.mainCanvas.getBoundingClientRect();
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
-        
         this.finishDrag(x, y);
+        this.activeTouchId = null;
+    }
+
+    handleDoubleTap(e) {
+        if (this.gameState !== 'playing') return;
+        const currentTime = Date.now();
+        if (currentTime - this.lastTap < 300) {
+            const touch = e.changedTouches[0];
+            const rect = this.currentCanvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            const pieceIndex = this.findPieceAt(x, y);
+            if (pieceIndex !== -1) this.rotatePiece(pieceIndex);
+            e.preventDefault();
+        }
+        this.lastTap = currentTime;
     }
 
     finishDrag(x, y) {
         if (!this.isDragging || !this.draggingPiece) return;
         
-        // Convertir coordenadas a posición de grid
         const gridX = Math.floor(x / this.cellSize);
         const gridY = Math.floor(y / this.cellSize);
         
         if (this.canPlacePiece(this.draggingPiece, gridX, gridY)) {
             this.placePiece(this.draggingPiece, gridX, gridY);
             this.playSound(this.piecePlaceSound);
-            
-            // Remover la pieza usada
             this.currentPieces.splice(this.draggingPieceIndex, 1);
-            
-            // Verificar líneas completadas
             this.checkLines();
             
-            // Si se acabaron las piezas actuales, rotar las siguientes
             if (this.currentPieces.length === 0) {
                 this.currentPieces = this.nextPieces;
                 this.nextPieces = [];
@@ -528,10 +858,11 @@
             
             this.score += 10;
             
-            // Verificar si el juego debe terminar (cuando no hay movimientos para NINGUNA pieza)
             if (!this.hasValidMovesForAllPieces()) {
                 setTimeout(() => this.gameOver(), 1000);
             }
+        } else {
+            this.playSound(this.rotateSound);
         }
         
         this.resetDrag();
@@ -543,19 +874,23 @@
         this.isDragging = false;
         this.draggingPiece = null;
         this.draggingPieceIndex = -1;
+        this.activeTouchId = null;
         this.currentCanvas.classList.remove('dragging');
     }
 
     findPieceAt(x, y) {
+        const pieceWidth = this.currentCanvas.width / 3;
+        const blockSize = Math.min(pieceWidth / 5, this.currentCanvas.height / 3);
+        
         for (let i = 0; i < this.currentPieces.length; i++) {
-            const pieceX = 50 + i * 150;
-            const pieceY = 50;
             const piece = this.currentPieces[i];
-            const pieceWidth = piece.shape[0].length * 20;
-            const pieceHeight = piece.shape.length * 20;
+            const pieceX = pieceWidth * i + pieceWidth / 2;
+            const pieceY = this.currentCanvas.height / 2;
+            const pieceDisplayWidth = piece.shape[0].length * blockSize;
+            const pieceDisplayHeight = piece.shape.length * blockSize;
             
-            if (x >= pieceX && x <= pieceX + pieceWidth &&
-                y >= pieceY && y <= pieceY + pieceHeight) {
+            if (x >= pieceX - pieceDisplayWidth / 2 && x <= pieceX + pieceDisplayWidth / 2 &&
+                y >= pieceY - pieceDisplayHeight / 2 && y <= pieceY + pieceDisplayHeight / 2) {
                 return i;
             }
         }
@@ -570,12 +905,7 @@
                 if (piece.shape[y][x] === 1) {
                     const boardX = gridX + x;
                     const boardY = gridY + y;
-                    
-                    if (boardX >= this.boardSize || boardY >= this.boardSize) {
-                        return false;
-                    }
-                    
-                    if (this.board[boardY][boardX] !== 0) {
+                    if (boardX >= this.boardSize || boardY >= this.boardSize || this.board[boardY][boardX] !== 0) {
                         return false;
                     }
                 }
@@ -590,10 +920,7 @@
                 if (piece.shape[y][x] === 1) {
                     const boardX = gridX + x;
                     const boardY = gridY + y;
-                    this.board[boardY][boardX] = {
-                        color: piece.color,
-                        pieceId: piece.id
-                    };
+                    this.board[boardY][boardX] = { color: piece.color, pieceId: piece.id };
                     this.blocksPlaced++;
                 }
             }
@@ -604,7 +931,6 @@
         let linesCleared = 0;
         let linesToClear = [];
         
-        // Verificar líneas horizontales
         for (let y = 0; y < this.boardSize; y++) {
             if (this.board[y].every(cell => cell !== 0)) {
                 linesToClear.push({ type: 'row', index: y });
@@ -612,7 +938,6 @@
             }
         }
         
-        // Verificar líneas verticales
         for (let x = 0; x < this.boardSize; x++) {
             let fullColumn = true;
             for (let y = 0; y < this.boardSize; y++) {
@@ -621,98 +946,65 @@
                     break;
                 }
             }
-            
-            if (fullColumn) {
-                linesToClear.push({ type: 'column', index: x });
-                linesCleared++;
-            }
+            if (fullColumn) linesToClear.push({ type: 'column', index: x });
         }
         
-        // Limpiar líneas
         linesToClear.forEach(line => {
-            if (line.type === 'row') {
-                this.clearLine(line.index);
-            } else {
-                this.clearColumn(line.index);
-            }
+            if (line.type === 'row') this.clearLine(line.index);
+            else this.clearColumn(line.index);
         });
         
-        // Mostrar mensaje y sonido si se limpiaron líneas
         if (linesCleared > 0) {
             this.showMessage(this.getLineMessage(linesCleared));
             this.playSound(this.lineCompleteSound);
-            
             const points = linesCleared * 100 * this.level;
             this.score += points;
             this.lines += linesCleared;
-            
-            // Subir de nivel cada 5 líneas
             this.level = Math.floor(this.lines / 5) + 1;
         }
     }
 
     getLineMessage(linesCleared) {
         const messages = {
-            1: ["¡Línea completa!", "¡Bien hecho!", "¡Perfecto!"],
-            2: ["¡DOBLE LÍNEA!", "¡Increíble!", "¡Fantástico!"],
-            3: ["¡TRIPLE LÍNEA!", "¡Asombroso!", "¡Espectacular!"],
-            4: ["¡CUÁDRUPLE!", "¡Legendario!", "¡Impresionante!"]
+            1: ["¡LÍNEA COMPLETA!", "¡BIEN HECHO!", "¡PERFECTO!"],
+            2: ["¡DOBLE LÍNEA!", "¡INCREÍBLE!", "¡FANTÁSTICO!"],
+            3: ["¡TRIPLE LÍNEA!", "¡ASOMBROSO!", "¡ESPECTACULAR!"],
+            4: ["¡CUÁDRUPLE!", "¡LEGENDARIO!", "¡IMPRESIONANTE!"]
         };
-        
-        const availableMessages = messages[linesCleared] || ["¡Excelente!"];
-        return availableMessages[Math.floor(Math.random() * availableMessages.length)];
+        return (messages[linesCleared] || ["¡EXCELENTE!"])[Math.floor(Math.random() * 3)];
     }
 
     showMessage(text) {
         const messageDisplay = document.getElementById('messageDisplay');
         messageDisplay.textContent = text;
         messageDisplay.style.display = 'block';
-        
-        setTimeout(() => {
-            messageDisplay.style.display = 'none';
-        }, 1500);
+        setTimeout(() => messageDisplay.style.display = 'none', 1500);
     }
 
     clearLine(y) {
-        for (let x = 0; x < this.boardSize; x++) {
-            this.board[y][x] = 0;
-        }
+        for (let x = 0; x < this.boardSize; x++) this.board[y][x] = 0;
     }
 
     clearColumn(x) {
-        for (let y = 0; y < this.boardSize; y++) {
-            this.board[y][x] = 0;
-        }
+        for (let y = 0; y < this.boardSize; y++) this.board[y][x] = 0;
     }
 
     hasValidMovesForAllPieces() {
-        // Verificar si hay espacio para AL MENOS UNA pieza actual
         for (let piece of this.currentPieces) {
-            if (this.hasValidMoveForPiece(piece)) {
-                return true;
-            }
+            if (this.hasValidMoveForPiece(piece)) return true;
         }
         return false;
     }
 
     hasValidMoveForPiece(piece) {
-        // Probar todas las rotaciones posibles
         const testPiece = JSON.parse(JSON.stringify(piece));
-        
         for (let rotation = 0; rotation < 4; rotation++) {
-            // Probar todas las posiciones posibles
             for (let y = 0; y <= this.boardSize - testPiece.shape.length; y++) {
                 for (let x = 0; x <= this.boardSize - testPiece.shape[0].length; x++) {
-                    if (this.canPlacePiece(testPiece, x, y)) {
-                        return true;
-                    }
+                    if (this.canPlacePiece(testPiece, x, y)) return true;
                 }
             }
-            
-            // Rotar la pieza para la siguiente iteración
-            if (rotation < 3) {
-                this.rotatePiece(testPiece);
-            }
+            if (rotation < 3) this.rotatePieceShape(testPiece);
         }
         return false;
     }
@@ -729,8 +1021,6 @@
     rotatePieceShape(piece) {
         const rows = piece.shape.length;
         const cols = piece.shape[0].length;
-        
-        // Crear nueva matriz rotada 90 grados
         const newShape = [];
         for (let x = 0; x < cols; x++) {
             newShape[x] = [];
@@ -738,7 +1028,6 @@
                 newShape[x][y] = piece.shape[rows - 1 - y][x];
             }
         }
-        
         piece.shape = newShape;
     }
 
@@ -751,10 +1040,13 @@
 
     toggleMusic() {
         this.musicEnabled = !this.musicEnabled;
+        const musicButton = document.querySelector('.music-control');
         if (this.musicEnabled) {
             this.backgroundMusic.play().catch(e => console.log("Music play failed:", e));
+            musicButton.innerHTML = '🎵';
         } else {
             this.backgroundMusic.pause();
+            musicButton.innerHTML = '🔇';
         }
     }
 
@@ -763,7 +1055,6 @@
         this.drawNextPieces();
         this.drawCurrentPieces();
         
-        // Dibujar pieza siendo arrastrada
         if (this.isDragging && this.draggingPiece) {
             this.drawDraggingPiece();
         }
@@ -774,37 +1065,55 @@
         const x = this.currentDragX - rect.left;
         const y = this.currentDragY - rect.top;
         
-        // Dibujar la pieza en la posición actual del cursor
         this.drawPiece(this.mainCtx, this.draggingPiece, x, y, this.cellSize, true);
         
-        // Dibujar un indicador de donde se puede colocar
         const gridX = Math.floor(x / this.cellSize);
         const gridY = Math.floor(y / this.cellSize);
         
         if (this.canPlacePiece(this.draggingPiece, gridX, gridY)) {
-            this.mainCtx.strokeStyle = '#00FF00';
-            this.mainCtx.lineWidth = 2;
-            this.mainCtx.strokeRect(gridX * this.cellSize, gridY * this.cellSize, 
-                                  this.draggingPiece.shape[0].length * this.cellSize, 
-                                  this.draggingPiece.shape.length * this.cellSize);
+            this.drawPiecePreview(this.mainCtx, this.draggingPiece, gridX, gridY, '#00FF00');
+        } else {
+            this.drawPiecePreview(this.mainCtx, this.draggingPiece, gridX, gridY, '#FF0000');
         }
+    }
+
+    drawPiecePreview(ctx, piece, gridX, gridY, color) {
+        ctx.save();
+        ctx.globalAlpha = 0.6;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.fillStyle = color + '20';
+        
+        for (let y = 0; y < piece.shape.length; y++) {
+            for (let x = 0; x < piece.shape[y].length; x++) {
+                if (piece.shape[y][x] === 1) {
+                    const boardX = gridX + x;
+                    const boardY = gridY + y;
+                    
+                    if (boardX < this.boardSize && boardY < this.boardSize) {
+                        const cellX = boardX * this.cellSize;
+                        const cellY = boardY * this.cellSize;
+                        
+                        ctx.fillRect(cellX + 2, cellY + 2, this.cellSize - 4, this.cellSize - 4);
+                        ctx.strokeRect(cellX + 2, cellY + 2, this.cellSize - 4, this.cellSize - 4);
+                    }
+                }
+            }
+        }
+        ctx.restore();
     }
 
     drawMainBoard() {
         this.mainCtx.clearRect(0, 0, this.mainCanvas.width, this.mainCanvas.height);
-        
-        // Dibujar fondo del tablero
         this.mainCtx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         this.mainCtx.fillRect(0, 0, this.mainCanvas.width, this.mainCanvas.height);
         
-        // Dibujar celdas ocupadas
         for (let y = 0; y < this.boardSize; y++) {
             for (let x = 0; x < this.boardSize; x++) {
                 this.drawCell(this.mainCtx, x, y, this.board[y][x]);
             }
         }
         
-        // Dibujar grid
         this.mainCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
         this.mainCtx.lineWidth = 1;
         for (let i = 0; i <= this.boardSize; i++) {
@@ -827,7 +1136,6 @@
         if (cell !== 0) {
             ctx.fillStyle = cell.color;
             ctx.fillRect(cellX + 1, cellY + 1, this.cellSize - 2, this.cellSize - 2);
-            
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
             ctx.lineWidth = 2;
             ctx.strokeRect(cellX + 1, cellY + 1, this.cellSize - 2, this.cellSize - 2);
@@ -836,48 +1144,54 @@
 
     drawCurrentPieces() {
         this.currentCtx.clearRect(0, 0, this.currentCanvas.width, this.currentCanvas.height);
-        
         this.currentCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
         this.currentCtx.fillRect(0, 0, this.currentCanvas.width, this.currentCanvas.height);
         
+        const pieceWidth = this.currentCanvas.width / 3;
+        const blockSize = Math.min(pieceWidth / 5, this.currentCanvas.height / 3);
+        
         for (let i = 0; i < this.currentPieces.length; i++) {
             const piece = this.currentPieces[i];
-            const baseX = 50 + i * 150;
-            const baseY = 50;
-            
-            this.drawPiece(this.currentCtx, piece, baseX, baseY, 20, false);
+            const baseX = pieceWidth * i + pieceWidth / 2;
+            const baseY = this.currentCanvas.height / 2;
+            this.drawPiece(this.currentCtx, piece, baseX, baseY, blockSize, false);
         }
     }
 
     drawNextPieces() {
         this.nextCtx.clearRect(0, 0, this.nextCanvas.width, this.nextCanvas.height);
-        
         this.nextCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
         this.nextCtx.fillRect(0, 0, this.nextCanvas.width, this.nextCanvas.height);
         
+        const isMobile = window.innerWidth < 768;
+        const pieceWidth = this.nextCanvas.width / 3;
+        const pieceHeight = this.nextCanvas.height;
+        const blockSize = isMobile ? 
+            Math.min(pieceWidth / 4, pieceHeight / 3) : 
+            Math.min(pieceWidth / 5, pieceHeight / 3);
+        
         for (let i = 0; i < this.nextPieces.length; i++) {
             const piece = this.nextPieces[i];
-            const baseX = 25;
-            const baseY = 25 + i * 60;
-            
-            this.drawPiece(this.nextCtx, piece, baseX, baseY, 15, false);
+            const baseX = pieceWidth * i + pieceWidth / 2;
+            const baseY = pieceHeight / 2;
+            this.drawPiece(this.nextCtx, piece, baseX, baseY, blockSize, false);
         }
     }
 
     drawPiece(ctx, piece, baseX, baseY, blockSize, isDragging) {
-        if (isDragging) {
-            ctx.globalAlpha = 0.8;
-        }
+        if (isDragging) ctx.globalAlpha = 0.8;
+        
+        const offsetX = - (piece.shape[0].length * blockSize) / 2;
+        const offsetY = - (piece.shape.length * blockSize) / 2;
         
         for (let y = 0; y < piece.shape.length; y++) {
             for (let x = 0; x < piece.shape[y].length; x++) {
                 if (piece.shape[y][x] === 1) {
-                    const blockX = baseX + x * blockSize;
-                    const blockY = baseY + y * blockSize;
+                    const blockX = baseX + offsetX + x * blockSize;
+                    const blockY = baseY + offsetY + y * blockSize;
                     
                     ctx.fillStyle = piece.color;
                     ctx.fillRect(blockX, blockY, blockSize - 2, blockSize - 2);
-                    
                     ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
                     ctx.lineWidth = 1;
                     ctx.strokeRect(blockX, blockY, blockSize - 2, blockSize - 2);
@@ -885,9 +1199,7 @@
             }
         }
         
-        if (isDragging) {
-            ctx.globalAlpha = 1.0;
-        }
+        if (isDragging) ctx.globalAlpha = 1.0;
     }
 
     updateUI() {
@@ -901,7 +1213,6 @@
         this.gameState = 'gameOver';
         this.playSound(this.gameOverSound);
         this.backgroundMusic.pause();
-        
         document.getElementById('finalScore').textContent = this.score;
         document.getElementById('finalLines').textContent = this.lines;
         document.getElementById('gameOverScreen').classList.remove('hidden');
@@ -910,11 +1221,7 @@
     start() {
         this.gameState = 'playing';
         document.getElementById('startScreen').classList.add('hidden');
-        
-        if (this.musicEnabled) {
-            this.backgroundMusic.play().catch(e => console.log("Music play failed:", e));
-        }
-        
+        if (this.musicEnabled) this.backgroundMusic.play();
         this.draw();
     }
 
@@ -943,9 +1250,7 @@ function restartGame() {
 }
 
 function rotatePiece(index) {
-    if (blockGame) {
-        blockGame.rotatePiece(index);
-    }
+    if (blockGame) blockGame.rotatePiece(index);
 }
 
 function resetGame() {
@@ -956,14 +1261,13 @@ function resetGame() {
 }
 
 function toggleMusic() {
-    if (blockGame) {
-        blockGame.toggleMusic();
-    }
+    if (blockGame) blockGame.toggleMusic();
 }
 
 // Iniciar cuando se carga la página
 window.onload = function() {
     blockGame = new BlockPuzzleGame();
+    document.getElementById('startScreen').classList.remove('hidden');
 };
     </script>
 </body>
