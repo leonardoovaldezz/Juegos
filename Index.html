@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mis 8 Juegos — Índice</title>
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --muted:#9aa6b2; --accent:#6ee7b7; --glass: rgba(255,255,255,0.03);
+      --gap:18px; --radius:14px;
+      font-size:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      background:linear-gradient(180deg,#071026 0%, #081428 60%); color:#e6eef6; -webkit-font-smoothing:antialiased;
+      padding:28px;
+    }
+
+    header{
+      display:flex; gap:16px; align-items:center; justify-content:space-between; margin-bottom:22px;
+    }
+    .brand{display:flex; gap:12px; align-items:center}
+    .logo{
+      width:56px; height:56px; border-radius:12px; background:linear-gradient(135deg,var(--accent),#60a5fa); display:flex; align-items:center; justify-content:center; font-weight:700; color:#052023;
+      box-shadow:0 6px 18px rgba(6,10,18,0.6);
+    }
+    h1{font-size:20px; margin:0}
+    p.lead{margin:0; color:var(--muted); font-size:13px}
+
+    .controls{display:flex; gap:12px; align-items:center}
+    .search{
+      background:var(--glass); border:1px solid rgba(255,255,255,0.04); padding:10px 12px; border-radius:12px; color:var(--muted);
+      display:flex; gap:8px; align-items:center; min-width:220px;
+    }
+    .search input{background:transparent; border:0; outline:none; color:inherit; width:150px}
+
+    .grid{
+      display:grid; grid-template-columns:repeat(4,1fr); gap:var(--gap);
+    }
+    @media (max-width:1100px){.grid{grid-template-columns:repeat(3,1fr)}}
+    @media (max-width:760px){.grid{grid-template-columns:repeat(2,1fr)}}
+    @media (max-width:420px){.grid{grid-template-columns:1fr}}
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border:1px solid rgba(255,255,255,0.04);
+      padding:12px; border-radius:12px; display:flex; flex-direction:column; gap:10px; height:100%;
+      transition:transform .18s ease, box-shadow .18s ease;
+    }
+    .card:hover{transform:translateY(-6px); box-shadow:0 10px 30px rgba(2,6,23,0.6)}
+    .thumb{height:140px; border-radius:10px; overflow:hidden; background:#071020; display:flex;align-items:center;justify-content:center; color:var(--muted); font-weight:600}
+    .meta{display:flex; align-items:center; justify-content:space-between}
+    .title{font-weight:700; font-size:15px}
+    .desc{font-size:13px; color:var(--muted)}
+    .actions{display:flex; gap:8px}
+    .btn{padding:8px 10px; border-radius:10px; border:0; cursor:pointer; font-weight:600}
+    .btn.play{background:linear-gradient(90deg,var(--accent),#60a5fa); color:#052023}
+    .btn.info{background:transparent; border:1px solid rgba(255,255,255,0.04); color:var(--muted)}
+
+    footer{margin-top:18px; color:var(--muted); font-size:13px}
+
+    /* small helper for hidden links (replace with your real game paths) */
+    a.game-link{display:inline-block; width:100%; height:100%;}
+
+    /* keyboard focus outlines */
+    .card:focus-within{outline:3px solid rgba(110,231,183,0.08)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo"><img src="/Imagenes/black.jpg" alt="Black" style="width:100%; height:100%; object-fit:cover;"></div>
+      <div>
+        <h1>Mis 8 juegos</h1>
+        <p class="lead">Selecciona un juego para abrirlo. Diseñado para ser responsive y accesible.</p>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="search" role="search" aria-label="Buscar juegos">
+        🔎<input id="search" placeholder="Buscar juego..." aria-label="Buscar juegos">
+      </div>
+      <div>
+        <button id="shuffle" class="btn info" title="Ordenar aleatorio">🎲 Aleatorio</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="grid" id="gamesGrid" aria-live="polite">
+      <!-- 8 tarjetas de ejemplo - reemplaza los href por las rutas a tus juegos -->
+
+      <article class="card" data-title="Arkanoid 2D">
+        <div class="thumb"><img src="/Imagenes/arkanoid.jpg" alt="Arkanoid" style="width:100%; height:100%; object-fit:cover;"></div>
+        <div class="meta">
+          <div>
+            <div class="title">Arkanoid 2D</div>
+            <div class="desc">Clásico juego de romper ladrillos.</div>
+          </div>
+          <div class="actions">
+            <a class="game-link" href="Arkanoid.html" target="_blank" rel="noopener noreferrer" aria-label="Abrir Arkanoid"></a>
+            <button class="btn play" onclick="openGame('Arkanoid.html')">Jugar</button>
+            
+          </div>
+        </div>
+      </article>
+
+      <article class="card" data-title="Snake Modern">
+        <div class="thumb">I<img src="/Imagenes/snake.jpg" alt="Snake" style="width:100%; height:100%; object-fit:cover;"></div>
+        <div class="meta">
+          <div>
+            <div class="title">Snake Modern</div>
+            <div class="desc">Snake con niveles y música.</div>
+          </div>
+          <div class="actions">
+            <a class="game-link" href="snake.html" target="_blank" rel="noopener noreferrer"></a>
+            <button class="btn play" onclick="openGame('snake.html')">Jugar</button>
+            
+          </div>
+        </div>
+      </article>
+
+      <article class="card" data-title="Doodle Jump Mejorado">
+        <div class="thumb"><img src="/Imagenes/Jump.PNG" alt="jump" style="width:100%; height:100%; object-fit:cover;"></div>
+        <div class="meta">
+          <div>
+            <div class="title">Doodle Jump Mejorado</div>
+            <div class="desc">Salta lo más alto que puedas.</div>
+          </div>
+          <div class="actions">
+            <a class="game-link" href="Jump.html" target="_blank" rel="noopener noreferrer"></a>
+            <button class="btn play" onclick="openGame('Jump.html')">Jugar</button>
+            
+          </div>
+        </div>
+      </article>
+
+      <article class="card" data-title="Pac-Man JS">
+        <div class="thumb"><img src="/Imagenes/pacmanimg.jpg" alt="Pac-Man" style="width:100%; height:100%; object-fit:cover;"></div>
+        <div class="meta">
+          <div>
+            <div class="title">Pac-Man JS</div>
+            <div class="desc">Come puntos y evade fantasmas.</div>
+          </div>
+          <div class="actions">
+            <a class="game-link" href="Pacman.html" target="_blank" rel="noopener noreferrer"></a>
+            <button class="btn play" onclick="openGame('Pacman.html')">Jugar</button>
+            
+          </div>
+        </div>
+      </article>
+
+      <article class="card" data-title="Tic Tac Toe AI">
+        <div class="thumb"><img src="/Imagenes/tictac.jpeg" alt="TicTacToe" style="width:100%; height:100%; object-fit:cover;"> </div>
+        <div class="meta">
+          <div>
+            <div class="title">Tic Tac Toe AI</div>
+            <div class="desc">Minimax vs IA — 1 o 2 jugadores.</div>
+          </div>
+          <div class="actions">
+            <a class="game-link" href="TicTac.html" target="_blank" rel="noopener noreferrer"></a>
+            <button class="btn play" onclick="openGame('TicTac.html')">Jugar</button>
+            
+          </div>
+        </div>
+      </article>
+
+      <article class="card" data-title="Puzzle">
+        <div class="thumb"><img src="/Imagenes/puzzle.jpg" alt="Puzzle" style="width:100%; height:100%; object-fit:cover;"></div>
+        <div class="meta">
+          <div>
+            <div class="title">Puzzle</div>
+            <div class="desc">Sigue las instrucciones.</div>
+          </div>
+          <div class="actions">
+            <a class="game-link" href="Puzzle.html" target="_blank" rel="noopener noreferrer"></a>
+            <button class="btn play" onclick="openGame('Puzzle.html')">Jugar</button>
+            
+          </div>
+        </div>
+      </article>
+
+      <article class="card" data-title="tetris">
+        <div class="thumb"><img src="/Imagenes/Tetris.png" alt="Tetris" style="width:100%; height:100%; object-fit:cover;"></div>
+        <div class="meta">
+          <div>
+            <div class="title">Tetris</div>
+            <div class="desc">Coloca las piezas y gana.</div>
+          </div>
+          <div class="actions">
+            <a class="game-link" href="Tetris.html" target="_blank" rel="noopener noreferrer"></a>
+            <button class="btn play" onclick="openGame('Tetris.html')">Jugar</button>
+            
+          </div>
+        </div>
+      </article>
+
+      <article class="card" data-title="Flappy Bird">
+        <div class="thumb"><img src="/Imagenes/flappy.png" alt="Flappy" style="width:100%; height:100%; object-fit:cover;"></div>
+        <div class="meta">
+          <div>
+            <div class="title">Flappy Bird</div>
+            <div class="desc">Haz la mejor puntuación.</div>
+          </div>
+          <div class="actions">
+            <a class="game-link" href="Flappy.html" target="_blank" rel="noopener noreferrer"></a>
+            <button class="btn play" onclick="openGame('Flappy.html')">Jugar</button>
+            
+          </div>
+        </div>
+      </article>
+
+    </section>
+  </main>
+
+  <footer>
+    Proyecto creado por <code>Leonardo Camacho Valdez</code>. Los botones "Jugar" abren en una nueva pestaña.
+  </footer>
+
+  <script>
+    // Búsqueda simple
+    const input = document.getElementById('search');
+    const grid = document.getElementById('gamesGrid');
+    input.addEventListener('input', ()=>{
+      const q = input.value.trim().toLowerCase();
+      Array.from(grid.children).forEach(card=>{
+        const title = card.dataset.title.toLowerCase();
+        card.style.display = title.includes(q) ? '' : 'none';
+      });
+    });
+
+    // Abrir juego en nueva pestaña
+    function openGame(path){
+      try{ window.open(path, '_blank'); }
+      catch(e){ window.location.href = path; }
+    }
+
+    // Ordenar aleatorio
+    document.getElementById('shuffle').addEventListener('click', ()=>{
+      const cards = Array.from(grid.children);
+      for(let i = cards.length -1; i>0; i--){
+        const j = Math.floor(Math.random()*(i+1));
+        grid.insertBefore(cards[j], cards[i]);
+      }
+    });
+
+    // Accesibilidad: buscar con Enter cuando el foco esté en el input
+    input.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') e.preventDefault(); });
+
+  </script>
+</body>
+</html>

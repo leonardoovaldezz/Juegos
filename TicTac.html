@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AI Tic Tac Toe — Mejorado</title>
+<style>
+:root{
+  --bg:#0f172a;
+  --card:#0b1220;
+  --accent:#06b6d4;
+  --muted:#94a3b8;
+  --win:#16a34a;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#071024 0%, var(--bg) 100%);
+  font-family:Inter,Segoe UI,Roboto,Arial;color:#e6eef6;
+  transition: background 0.3s;
+}
+.wrap{
+  width:420px;max-width:94%;
+  background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));
+  border-radius:12px;padding:20px;
+  box-shadow:0 8px 30px rgba(2,6,23,0.7);
+  transition: transform 0.3s;
+}
+.wrap:hover {transform: scale(1.02);}
+h1{font-size:22px;margin:0 0 12px;text-align:center;}
+.controls{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
+.btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 10px;border-radius:8px;color:var(--muted);cursor:pointer;transition:all 0.2s;}
+.btn.primary{background:var(--accent);color:#042027;border:none;}
+.btn:hover:not(:disabled){transform: scale(1.05);}
+.btn:disabled{opacity:0.5;cursor:not-allowed;}
+.status{margin-left:auto;color:var(--muted);font-size:14px;}
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0;}
+.cell{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;font-size:48px;
+background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.02));
+border-radius:10px;cursor:pointer;user-select:none;border:1px solid rgba(255,255,255,0.03);
+transition: all 0.2s;}
+.cell.disabled{cursor:not-allowed;opacity:0.9;}
+.cell.win{background:linear-gradient(90deg,rgba(22,163,74,0.12),rgba(22,163,74,0.06));
+box-shadow:0 6px 18px rgba(16,185,129,0.06);border-color:rgba(22,163,74,0.25);}
+.meta{display:flex;gap:10px;align-items:center;margin-top:10px;font-size:14px;color:var(--muted);flex-wrap:wrap;}
+.choices{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.small{font-size:13px;color:var(--muted);}
+footer{margin-top:14px;font-size:12px;color:var(--muted);text-align:center;}
+.hl{color:var(--accent);font-weight:600;}
+.level-select{margin-left:auto;display:flex;gap:6px;align-items:center;}
+.level-select select{padding:5px;border-radius:6px;border:none;background:#042027;color:white;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<audio id="bg-music" loop>
+  <source src="Musica/fondo.mp3" type="audio/mpeg">
+</audio>
+
+<div class="wrap">
+  <h1>AI Tic Tac Toe — Mejorado</h1>
+  <div class="controls">
+    <div class="choices">
+      <label class="small">Jugar como:</label>
+      <button class="btn" id="pickX">X</button>
+      <button class="btn" id="pickO">O</button>
+    </div>
+    <button class="btn primary" id="restart">Reiniciar</button>
+    <div class="level-select">
+      <label class="small">Nivel:</label>
+      <select id="difficulty">
+        <option value="easy">Fácil</option>
+        <option value="medium">Medio</option>
+        <option value="hard" selected>Difícil</option>
+      </select>
+    </div>
+    <div class="status" id="status">Turno: —</div>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <div class="meta">
+    <div>IA usa <span class="hl">Minimax</span></div>
+    <div style="margin-left:auto">Movimientos: <span id="moves">0</span></div>
+  </div>
+
+  <footer>Hecho con ❤️ — Mejorado con música y niveles</footer>
+</div>
+
+<script>
+const HUMAN = 'X';
+const AI = 'O';
+
+let boardState = Array(9).fill('');
+let humanMark = 'X';
+let aiMark = 'O';
+let currentTurn = 'X';
+let gameOver = false;
+let movesCount = 0;
+let difficulty = 'hard';
+
+const boardEl = document.getElementById('board');
+const statusEl = document.getElementById('status');
+const restartBtn = document.getElementById('restart');
+const pickX = document.getElementById('pickX');
+const pickO = document.getElementById('pickO');
+const movesEl = document.getElementById('moves');
+const difficultySelect = document.getElementById('difficulty');
+const bgMusic = document.getElementById('bg-music');
+
+// Música de fondo
+bgMusic.volume = 0.3;
+bgMusic.play().catch(()=>{}); // autoplay bloqueado en algunos navegadores
+
+function createBoard(){
+  boardEl.innerHTML = '';
+  for(let i=0;i<9;i++){
+    const div = document.createElement('div');
+    div.className='cell';
+    div.dataset.index=i;
+    div.addEventListener('click',onCellClick);
+    boardEl.appendChild(div);
+  }
+}
+
+function startGame(){
+  boardState=Array(9).fill('');
+  currentTurn='X';
+  gameOver=false;
+  movesCount=0;
+  render();
+  if(aiMark==='X'){setTimeout(()=>{aiMove()},250);}
+}
+
+function render(){
+  const cells=boardEl.children;
+  for(let i=0;i<9;i++){
+    cells[i].textContent=boardState[i];
+    cells[i].classList.toggle('disabled', boardState[i]!=='')
+    cells[i].classList.remove('win');
+  }
+  movesEl.textContent=movesCount;
+  if(gameOver) return;
+  statusEl.textContent=`Turno: ${currentTurn}`;
+}
+
+function onCellClick(e){
+  const idx=Number(e.currentTarget.dataset.index);
+  if(gameOver || boardState[idx]!=='' || currentTurn!==humanMark) return;
+  makeMove(idx,humanMark);
+  movesCount++;
+  const winner = checkWinner(boardState);
+  if(winner || isTie(boardState)){finish(winner); return;}
+  currentTurn=aiMark;
+  render();
+  setTimeout(()=>{aiMove()},250);
+}
+
+function makeMove(idx,mark){
+  boardState[idx]=mark;
+  const winner = checkWinner(boardState);
+  if(winner || isTie(boardState)){finish(winner); return;}
+  currentTurn=(mark==='X')?'O':'X';
+  render();
+}
+
+function aiMove(){
+  if(gameOver) return;
+  let index;
+  if(difficulty==='easy'){
+    const empty = boardState.map((v,i)=>v===''?i:null).filter(v=>v!==null);
+    index = empty[Math.floor(Math.random()*empty.length)];
+  } else if(difficulty==='medium'){
+    // 50% chance de elegir perfecto, 50% aleatorio
+    if(Math.random()<0.5){
+      index = minimax(boardState, aiMark).index;
+    } else {
+      const empty = boardState.map((v,i)=>v===''?i:null).filter(v=>v!==null);
+      index = empty[Math.floor(Math.random()*empty.length)];
+    }
+  } else {
+    index = minimax(boardState, aiMark).index;
+  }
+  boardState[index]=aiMark;
+  movesCount++;
+  const winner = checkWinner(boardState);
+  if(winner || isTie(boardState)){finish(winner); return;}
+  currentTurn=humanMark;
+  render();
+}
+
+function checkWinner(b){
+  const lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  for(const [a,b1,c] of lines){
+    if(b[a] && b[a]===b[b1] && b[a]===b[c]) return b[a];
+  }
+  return null;
+}
+
+function isTie(b){return b.every(c=>c!=='') && !checkWinner(b);}
+
+function finish(winner){
+  gameOver=true;
+  const cells = boardEl.children;
+  if(winner){
+    const lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    for(const [a,b1,c] of lines){
+      if(boardState[a] && boardState[a]===boardState[b1] && boardState[a]===boardState[c]){
+        cells[a].classList.add('win');
+        cells[b1].classList.add('win');
+        cells[c].classList.add('win');
+      }
+    }
+    statusEl.textContent = (winner===humanMark)?'¡Ganaste!':'La IA gana';
+  } else {
+    statusEl.textContent='Empate';
+  }
+  render();
+}
+
+// --- Minimax ---
+function minimax(newBoard,player){
+  const winner = checkWinner(newBoard);
+  if(winner===aiMark) return {score:10};
+  else if(winner===humanMark) return {score:-10};
+  else if(isTie(newBoard)) return {score:0};
+
+  const availSpots = [];
+  for(let i=0;i<9;i++) if(newBoard[i]==='') availSpots.push(i);
+
+  const moves=[];
+  for(const i of availSpots){
+    const move={index:i};
+    newBoard[i]=player;
+    let result;
+    if(player===aiMark) result=minimax(newBoard,humanMark);
+    else result=minimax(newBoard,aiMark);
+    move.score=result.score;
+    newBoard[i]='';
+    moves.push(move);
+  }
+
+  let bestMove;
+  if(player===aiMark){
+    let bestScore=-Infinity;
+    for(const m of moves){if(m.score>bestScore){bestScore=m;bestScore=m.score;bestMove=m;}}
+  } else {
+    let bestScore=Infinity;
+    for(const m of moves){if(m.score<bestScore){bestScore=m;bestScore=m.score;bestMove=m;}}
+  }
+  return bestMove;
+}
+
+// UI handlers
+restartBtn.addEventListener('click',()=>{startGame();});
+pickX.addEventListener('click',()=>{
+  humanMark='X'; aiMark='O';
+  pickX.classList.add('primary'); pickO.classList.remove('primary'); startGame();
+});
+pickO.addEventListener('click',()=>{
+  humanMark='O'; aiMark='X';
+  pickO.classList.add('primary'); pickX.classList.remove('primary'); startGame();
+});
+difficultySelect.addEventListener('change',()=>{difficulty=difficultySelect.value; startGame();});
+
+// Inicialización
+createBoard();
+pickX.classList.add('primary');
+startGame();
+window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r') startGame();});
+</script>
+
+</body>
+</html>

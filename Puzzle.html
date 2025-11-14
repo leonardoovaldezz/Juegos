@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Block Puzzle JavaScript</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+        }
+        
+        #gameContainer {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            max-width: 800px;
+            position: relative;
+        }
+        
+        #gameInfo {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        
+        #gameBoards {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin-bottom: 20px;
+            align-items: flex-start;
+        }
+        
+        .board {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 10px;
+        }
+        
+        .board-title {
+            color: white;
+            margin-bottom: 10px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        #mainBoard {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+        }
+        
+        #nextPiecesBoard {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.4);
+            width: 150px;
+            height: 200px;
+        }
+        
+        #currentPiecesArea {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+        
+        #currentPiecesBoard {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.4);
+            margin: 0 auto;
+            cursor: grab;
+        }
+        
+        #controls {
+            margin: 20px 0;
+        }
+        
+        button {
+            background: #FF6B6B;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            margin: 0 10px;
+            cursor: pointer;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #FF5252;
+            transform: scale(1.05);
+        }
+        
+        #startScreen, #gameOverScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            z-index: 1000;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .game-title {
+            color: #FFD700;
+            font-size: 42px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            max-width: 500px;
+        }
+        
+        .current-pieces-title {
+            color: white;
+            font-size: 18px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        #messageDisplay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 215, 0, 0.9);
+            color: #000;
+            padding: 20px 40px;
+            border-radius: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 100;
+            display: none;
+            animation: popIn 0.5s ease-out;
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            70% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        .rotate-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .rotate-btn {
+            background: #4ECDC4;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .music-control {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .dragging {
+            opacity: 0.8;
+            transform: scale(1.1);
+            transition: all 0.2s;
+            cursor: grabbing !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <button class="music-control" onclick="toggleMusic()">🎵</button>
+        
+        <h1 class="game-title">🧩 BLOCK PUZZLE 🧩</h1>
+        
+        <div id="gameInfo">
+            <div>Puntos: <span id="score">0</span></div>
+            <div>Líneas: <span id="lines">0</span></div>
+            <div>Nivel: <span id="level">1</span></div>
+            <div>Bloques: <span id="blocksPlaced">0</span></div>
+        </div>
+
+        <div id="messageDisplay"></div>
+        
+        <div id="gameBoards">
+            <div class="board">
+                <div class="board-title">TABLERO PRINCIPAL</div>
+                <canvas id="mainBoard" width="300" height="300"></canvas>
+            </div>
+            
+            <div class="board">
+                <div class="board-title">PRÓXIMAS PIEZAS</div>
+                <canvas id="nextPiecesBoard" width="150" height="200"></canvas>
+            </div>
+        </div>
+        
+        <div id="currentPiecesArea">
+            <div class="current-pieces-title">PIEZAS ACTUALES - Arrástralas al tablero</div>
+            <canvas id="currentPiecesBoard" width="450" height="100"></canvas>
+            <div class="rotate-buttons">
+                <button class="rotate-btn" onclick="rotatePiece(0)">↻ Pieza 1</button>
+                <button class="rotate-btn" onclick="rotatePiece(1)">↻ Pieza 2</button>
+                <button class="rotate-btn" onclick="rotatePiece(2)">↻ Pieza 3</button>
+            </div>
+        </div>
+        
+        <div id="controls">
+            <button onclick="resetGame()">REINICIAR</button>
+        </div>
+        
+        <div class="instructions">
+            <p>💡 <strong>Instrucciones:</strong></p>
+            <p>• Haz clic en una pieza y arrástrala al tablero principal</p>
+            <p>• Usa los botones para rotar cada pieza antes de colocarla</p>
+            <p>• Completa líneas horizontales o verticales para ganar puntos</p>
+            <p>• ¡Pierdes cuando no hay espacio para NINGUNA pieza!</p>
+        </div>
+    </div>
+
+    <div id="startScreen">
+        <h1 class="game-title">🧩 BLOCK PUZZLE 🧩</h1>
+        <div class="instructions">
+            <p>🎮 <strong>¿CÓMO JUGAR?</strong></p>
+            <p>• Tienes 3 piezas para colocar en cada turno</p>
+            <p>• Arrástralas del área inferior al tablero</p>
+            <p>• Rota las piezas para que encajen mejor</p>
+            <p>• Completa líneas para ganar puntos y bonos</p>
+            <p>• ¡El juego termina cuando no puedes colocar NINGUNA pieza!</p>
+        </div>
+        <button onclick="startGame()">¡COMENZAR!</button>
+    </div>
+
+    <div id="gameOverScreen" class="hidden">
+        <h1 class="game-title">💀 GAME OVER</h1>
+        <p>Puntuación final: <span id="finalScore">0</span></p>
+        <p>Líneas completadas: <span id="finalLines">0</span></p>
+        <button onclick="restartGame()">JUGAR DE NUEVO</button>
+    </div>
+
+    <!-- Audio elements -->
+    <audio id="backgroundMusic" loop>
+        <source src="Musica/fondo.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="lineCompleteSound">
+        <source src="Musica/lineacompletada.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="piecePlaceSound">
+        <source src="Musica/game-start.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="gameOverSound">
+        <source src="Musica/game-over.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="rotateSound">
+        <source src="Musica/girar.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        class BlockPuzzleGame {
+    constructor() {
+        this.mainCanvas = document.getElementById('mainBoard');
+        this.mainCtx = this.mainCanvas.getContext('2d');
+        this.nextCanvas = document.getElementById('nextPiecesBoard');
+        this.nextCtx = this.nextCanvas.getContext('2d');
+        this.currentCanvas = document.getElementById('currentPiecesBoard');
+        this.currentCtx = this.currentCanvas.getContext('2d');
+        
+        this.gameState = 'menu';
+        this.score = 0;
+        this.lines = 0;
+        this.level = 1;
+        this.blocksPlaced = 0;
+        
+        this.cellSize = 30;
+        this.boardSize = 10;
+        
+        // Elementos de audio
+        this.backgroundMusic = document.getElementById('backgroundMusic');
+        this.lineCompleteSound = document.getElementById('lineCompleteSound');
+        this.piecePlaceSound = document.getElementById('piecePlaceSound');
+        this.gameOverSound = document.getElementById('gameOverSound');
+        this.rotateSound = document.getElementById('rotateSound');
+        
+        // Control de música
+        this.musicEnabled = true;
+        
+        // Estado del arrastre
+        this.isDragging = false;
+        this.draggingPiece = null;
+        this.draggingPieceIndex = -1;
+        this.dragStartX = 0;
+        this.dragStartY = 0;
+        this.currentDragX = 0;
+        this.currentDragY = 0;
+        
+        this.init();
+        this.setupEventListeners();
+    }
+
+    init() {
+        // Tablero principal (10x10)
+        this.board = Array(this.boardSize).fill().map(() => Array(this.boardSize).fill(0));
+        
+        // Piezas actuales y siguientes
+        this.currentPieces = [];
+        this.nextPieces = [];
+        
+        // Generar ambas sets de piezas
+        this.generateInitialPieces();
+        this.updateUI();
+    }
+
+    generateInitialPieces() {
+        // Generar 3 piezas actuales
+        this.currentPieces = [];
+        for (let i = 0; i < 3; i++) {
+            this.currentPieces.push(this.generateRandomPiece());
+        }
+        
+        // Generar 3 piezas siguientes
+        this.nextPieces = [];
+        for (let i = 0; i < 3; i++) {
+            this.nextPieces.push(this.generateRandomPiece());
+        }
+    }
+
+    generateRandomPiece() {
+        const pieces = [
+            // Cuadrado 2x2
+            { shape: [[1,1],[1,1]], size: 2 },
+            // L
+            { shape: [[1,0],[1,0],[1,1]], size: 3 },
+            // L invertida
+            { shape: [[0,1],[0,1],[1,1]], size: 3 },
+            // Línea horizontal
+            { shape: [[1,1,1]], size: 3 },
+            // Línea vertical  
+            { shape: [[1],[1],[1]], size: 3 },
+            // T
+            { shape: [[1,1,1],[0,1,0]], size: 3 },
+            // Z
+            { shape: [[1,1,0],[0,1,1]], size: 3 },
+            // S
+            { shape: [[0,1,1],[1,1,0]], size: 3 },
+            // Punto
+            { shape: [[1]], size: 1 },
+            // Cruz
+            { shape: [[0,1,0],[1,1,1],[0,1,0]], size: 3 }
+        ];
+        
+        const pieceTemplate = pieces[Math.floor(Math.random() * pieces.length)];
+        const piece = {
+            shape: JSON.parse(JSON.stringify(pieceTemplate.shape)),
+            color: this.getRandomColor(),
+            size: pieceTemplate.size,
+            id: Math.random().toString(36).substr(2, 9)
+        };
+        
+        return piece;
+    }
+
+    getRandomColor() {
+        const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'];
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    setupEventListeners() {
+        // Eventos para el área de piezas actuales
+        this.currentCanvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+        this.currentCanvas.addEventListener('touchstart', (e) => this.handleTouchStart(e));
+        
+        // Eventos globales para el arrastre
+        document.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+        document.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+        document.addEventListener('touchmove', (e) => this.handleTouchMove(e));
+        document.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+        
+        // Prevenir comportamiento por defecto
+        this.currentCanvas.addEventListener('dragstart', (e) => e.preventDefault());
+    }
+
+    handleMouseDown(e) {
+        if (this.gameState !== 'playing') return;
+        
+        const rect = this.currentCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        this.startDrag(x, y, e.clientX, e.clientY);
+    }
+
+    handleTouchStart(e) {
+        if (this.gameState !== 'playing') return;
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        const rect = this.currentCanvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        
+        this.startDrag(x, y, touch.clientX, touch.clientY);
+    }
+
+    startDrag(localX, localY, globalX, globalY) {
+        const pieceIndex = this.findPieceAt(localX, localY);
+        if (pieceIndex !== -1) {
+            this.isDragging = true;
+            this.draggingPiece = JSON.parse(JSON.stringify(this.currentPieces[pieceIndex]));
+            this.draggingPieceIndex = pieceIndex;
+            this.dragStartX = globalX;
+            this.dragStartY = globalY;
+            this.currentDragX = globalX;
+            this.currentDragY = globalY;
+            
+            // Añadir clase de arrastre al canvas
+            this.currentCanvas.classList.add('dragging');
+            
+            this.draw();
+        }
+    }
+
+    handleMouseMove(e) {
+        if (!this.isDragging) return;
+        
+        this.currentDragX = e.clientX;
+        this.currentDragY = e.clientY;
+        this.draw();
+    }
+
+    handleTouchMove(e) {
+        if (!this.isDragging) return;
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        this.currentDragX = touch.clientX;
+        this.currentDragY = touch.clientY;
+        this.draw();
+    }
+
+    handleMouseUp(e) {
+        if (!this.isDragging) return;
+        
+        const rect = this.mainCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        this.finishDrag(x, y);
+    }
+
+    handleTouchEnd(e) {
+        if (!this.isDragging) return;
+        e.preventDefault();
+        
+        const touch = e.changedTouches[0];
+        const rect = this.mainCanvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        
+        this.finishDrag(x, y);
+    }
+
+    finishDrag(x, y) {
+        if (!this.isDragging || !this.draggingPiece) return;
+        
+        // Convertir coordenadas a posición de grid
+        const gridX = Math.floor(x / this.cellSize);
+        const gridY = Math.floor(y / this.cellSize);
+        
+        if (this.canPlacePiece(this.draggingPiece, gridX, gridY)) {
+            this.placePiece(this.draggingPiece, gridX, gridY);
+            this.playSound(this.piecePlaceSound);
+            
+            // Remover la pieza usada
+            this.currentPieces.splice(this.draggingPieceIndex, 1);
+            
+            // Verificar líneas completadas
+            this.checkLines();
+            
+            // Si se acabaron las piezas actuales, rotar las siguientes
+            if (this.currentPieces.length === 0) {
+                this.currentPieces = this.nextPieces;
+                this.nextPieces = [];
+                for (let i = 0; i < 3; i++) {
+                    this.nextPieces.push(this.generateRandomPiece());
+                }
+            }
+            
+            this.score += 10;
+            
+            // Verificar si el juego debe terminar (cuando no hay movimientos para NINGUNA pieza)
+            if (!this.hasValidMovesForAllPieces()) {
+                setTimeout(() => this.gameOver(), 1000);
+            }
+        }
+        
+        this.resetDrag();
+        this.draw();
+        this.updateUI();
+    }
+
+    resetDrag() {
+        this.isDragging = false;
+        this.draggingPiece = null;
+        this.draggingPieceIndex = -1;
+        this.currentCanvas.classList.remove('dragging');
+    }
+
+    findPieceAt(x, y) {
+        for (let i = 0; i < this.currentPieces.length; i++) {
+            const pieceX = 50 + i * 150;
+            const pieceY = 50;
+            const piece = this.currentPieces[i];
+            const pieceWidth = piece.shape[0].length * 20;
+            const pieceHeight = piece.shape.length * 20;
+            
+            if (x >= pieceX && x <= pieceX + pieceWidth &&
+                y >= pieceY && y <= pieceY + pieceHeight) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    canPlacePiece(piece, gridX, gridY) {
+        if (gridX < 0 || gridY < 0) return false;
+        
+        for (let y = 0; y < piece.shape.length; y++) {
+            for (let x = 0; x < piece.shape[y].length; x++) {
+                if (piece.shape[y][x] === 1) {
+                    const boardX = gridX + x;
+                    const boardY = gridY + y;
+                    
+                    if (boardX >= this.boardSize || boardY >= this.boardSize) {
+                        return false;
+                    }
+                    
+                    if (this.board[boardY][boardX] !== 0) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    placePiece(piece, gridX, gridY) {
+        for (let y = 0; y < piece.shape.length; y++) {
+            for (let x = 0; x < piece.shape[y].length; x++) {
+                if (piece.shape[y][x] === 1) {
+                    const boardX = gridX + x;
+                    const boardY = gridY + y;
+                    this.board[boardY][boardX] = {
+                        color: piece.color,
+                        pieceId: piece.id
+                    };
+                    this.blocksPlaced++;
+                }
+            }
+        }
+    }
+
+    checkLines() {
+        let linesCleared = 0;
+        let linesToClear = [];
+        
+        // Verificar líneas horizontales
+        for (let y = 0; y < this.boardSize; y++) {
+            if (this.board[y].every(cell => cell !== 0)) {
+                linesToClear.push({ type: 'row', index: y });
+                linesCleared++;
+            }
+        }
+        
+        // Verificar líneas verticales
+        for (let x = 0; x < this.boardSize; x++) {
+            let fullColumn = true;
+            for (let y = 0; y < this.boardSize; y++) {
+                if (this.board[y][x] === 0) {
+                    fullColumn = false;
+                    break;
+                }
+            }
+            
+            if (fullColumn) {
+                linesToClear.push({ type: 'column', index: x });
+                linesCleared++;
+            }
+        }
+        
+        // Limpiar líneas
+        linesToClear.forEach(line => {
+            if (line.type === 'row') {
+                this.clearLine(line.index);
+            } else {
+                this.clearColumn(line.index);
+            }
+        });
+        
+        // Mostrar mensaje y sonido si se limpiaron líneas
+        if (linesCleared > 0) {
+            this.showMessage(this.getLineMessage(linesCleared));
+            this.playSound(this.lineCompleteSound);
+            
+            const points = linesCleared * 100 * this.level;
+            this.score += points;
+            this.lines += linesCleared;
+            
+            // Subir de nivel cada 5 líneas
+            this.level = Math.floor(this.lines / 5) + 1;
+        }
+    }
+
+    getLineMessage(linesCleared) {
+        const messages = {
+            1: ["¡Línea completa!", "¡Bien hecho!", "¡Perfecto!"],
+            2: ["¡DOBLE LÍNEA!", "¡Increíble!", "¡Fantástico!"],
+            3: ["¡TRIPLE LÍNEA!", "¡Asombroso!", "¡Espectacular!"],
+            4: ["¡CUÁDRUPLE!", "¡Legendario!", "¡Impresionante!"]
+        };
+        
+        const availableMessages = messages[linesCleared] || ["¡Excelente!"];
+        return availableMessages[Math.floor(Math.random() * availableMessages.length)];
+    }
+
+    showMessage(text) {
+        const messageDisplay = document.getElementById('messageDisplay');
+        messageDisplay.textContent = text;
+        messageDisplay.style.display = 'block';
+        
+        setTimeout(() => {
+            messageDisplay.style.display = 'none';
+        }, 1500);
+    }
+
+    clearLine(y) {
+        for (let x = 0; x < this.boardSize; x++) {
+            this.board[y][x] = 0;
+        }
+    }
+
+    clearColumn(x) {
+        for (let y = 0; y < this.boardSize; y++) {
+            this.board[y][x] = 0;
+        }
+    }
+
+    hasValidMovesForAllPieces() {
+        // Verificar si hay espacio para AL MENOS UNA pieza actual
+        for (let piece of this.currentPieces) {
+            if (this.hasValidMoveForPiece(piece)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    hasValidMoveForPiece(piece) {
+        // Probar todas las rotaciones posibles
+        const testPiece = JSON.parse(JSON.stringify(piece));
+        
+        for (let rotation = 0; rotation < 4; rotation++) {
+            // Probar todas las posiciones posibles
+            for (let y = 0; y <= this.boardSize - testPiece.shape.length; y++) {
+                for (let x = 0; x <= this.boardSize - testPiece.shape[0].length; x++) {
+                    if (this.canPlacePiece(testPiece, x, y)) {
+                        return true;
+                    }
+                }
+            }
+            
+            // Rotar la pieza para la siguiente iteración
+            if (rotation < 3) {
+                this.rotatePiece(testPiece);
+            }
+        }
+        return false;
+    }
+
+    rotatePiece(pieceIndex) {
+        if (pieceIndex < this.currentPieces.length && this.gameState === 'playing') {
+            const piece = this.currentPieces[pieceIndex];
+            this.rotatePieceShape(piece);
+            this.playSound(this.rotateSound);
+            this.draw();
+        }
+    }
+
+    rotatePieceShape(piece) {
+        const rows = piece.shape.length;
+        const cols = piece.shape[0].length;
+        
+        // Crear nueva matriz rotada 90 grados
+        const newShape = [];
+        for (let x = 0; x < cols; x++) {
+            newShape[x] = [];
+            for (let y = 0; y < rows; y++) {
+                newShape[x][y] = piece.shape[rows - 1 - y][x];
+            }
+        }
+        
+        piece.shape = newShape;
+    }
+
+    playSound(audioElement) {
+        if (this.musicEnabled) {
+            audioElement.currentTime = 0;
+            audioElement.play().catch(e => console.log("Audio play failed:", e));
+        }
+    }
+
+    toggleMusic() {
+        this.musicEnabled = !this.musicEnabled;
+        if (this.musicEnabled) {
+            this.backgroundMusic.play().catch(e => console.log("Music play failed:", e));
+        } else {
+            this.backgroundMusic.pause();
+        }
+    }
+
+    draw() {
+        this.drawMainBoard();
+        this.drawNextPieces();
+        this.drawCurrentPieces();
+        
+        // Dibujar pieza siendo arrastrada
+        if (this.isDragging && this.draggingPiece) {
+            this.drawDraggingPiece();
+        }
+    }
+
+    drawDraggingPiece() {
+        const rect = this.mainCanvas.getBoundingClientRect();
+        const x = this.currentDragX - rect.left;
+        const y = this.currentDragY - rect.top;
+        
+        // Dibujar la pieza en la posición actual del cursor
+        this.drawPiece(this.mainCtx, this.draggingPiece, x, y, this.cellSize, true);
+        
+        // Dibujar un indicador de donde se puede colocar
+        const gridX = Math.floor(x / this.cellSize);
+        const gridY = Math.floor(y / this.cellSize);
+        
+        if (this.canPlacePiece(this.draggingPiece, gridX, gridY)) {
+            this.mainCtx.strokeStyle = '#00FF00';
+            this.mainCtx.lineWidth = 2;
+            this.mainCtx.strokeRect(gridX * this.cellSize, gridY * this.cellSize, 
+                                  this.draggingPiece.shape[0].length * this.cellSize, 
+                                  this.draggingPiece.shape.length * this.cellSize);
+        }
+    }
+
+    drawMainBoard() {
+        this.mainCtx.clearRect(0, 0, this.mainCanvas.width, this.mainCanvas.height);
+        
+        // Dibujar fondo del tablero
+        this.mainCtx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        this.mainCtx.fillRect(0, 0, this.mainCanvas.width, this.mainCanvas.height);
+        
+        // Dibujar celdas ocupadas
+        for (let y = 0; y < this.boardSize; y++) {
+            for (let x = 0; x < this.boardSize; x++) {
+                this.drawCell(this.mainCtx, x, y, this.board[y][x]);
+            }
+        }
+        
+        // Dibujar grid
+        this.mainCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        this.mainCtx.lineWidth = 1;
+        for (let i = 0; i <= this.boardSize; i++) {
+            this.mainCtx.beginPath();
+            this.mainCtx.moveTo(i * this.cellSize, 0);
+            this.mainCtx.lineTo(i * this.cellSize, this.boardSize * this.cellSize);
+            this.mainCtx.stroke();
+            
+            this.mainCtx.beginPath();
+            this.mainCtx.moveTo(0, i * this.cellSize);
+            this.mainCtx.lineTo(this.boardSize * this.cellSize, i * this.cellSize);
+            this.mainCtx.stroke();
+        }
+    }
+
+    drawCell(ctx, x, y, cell) {
+        const cellX = x * this.cellSize;
+        const cellY = y * this.cellSize;
+        
+        if (cell !== 0) {
+            ctx.fillStyle = cell.color;
+            ctx.fillRect(cellX + 1, cellY + 1, this.cellSize - 2, this.cellSize - 2);
+            
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(cellX + 1, cellY + 1, this.cellSize - 2, this.cellSize - 2);
+        }
+    }
+
+    drawCurrentPieces() {
+        this.currentCtx.clearRect(0, 0, this.currentCanvas.width, this.currentCanvas.height);
+        
+        this.currentCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        this.currentCtx.fillRect(0, 0, this.currentCanvas.width, this.currentCanvas.height);
+        
+        for (let i = 0; i < this.currentPieces.length; i++) {
+            const piece = this.currentPieces[i];
+            const baseX = 50 + i * 150;
+            const baseY = 50;
+            
+            this.drawPiece(this.currentCtx, piece, baseX, baseY, 20, false);
+        }
+    }
+
+    drawNextPieces() {
+        this.nextCtx.clearRect(0, 0, this.nextCanvas.width, this.nextCanvas.height);
+        
+        this.nextCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        this.nextCtx.fillRect(0, 0, this.nextCanvas.width, this.nextCanvas.height);
+        
+        for (let i = 0; i < this.nextPieces.length; i++) {
+            const piece = this.nextPieces[i];
+            const baseX = 25;
+            const baseY = 25 + i * 60;
+            
+            this.drawPiece(this.nextCtx, piece, baseX, baseY, 15, false);
+        }
+    }
+
+    drawPiece(ctx, piece, baseX, baseY, blockSize, isDragging) {
+        if (isDragging) {
+            ctx.globalAlpha = 0.8;
+        }
+        
+        for (let y = 0; y < piece.shape.length; y++) {
+            for (let x = 0; x < piece.shape[y].length; x++) {
+                if (piece.shape[y][x] === 1) {
+                    const blockX = baseX + x * blockSize;
+                    const blockY = baseY + y * blockSize;
+                    
+                    ctx.fillStyle = piece.color;
+                    ctx.fillRect(blockX, blockY, blockSize - 2, blockSize - 2);
+                    
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(blockX, blockY, blockSize - 2, blockSize - 2);
+                }
+            }
+        }
+        
+        if (isDragging) {
+            ctx.globalAlpha = 1.0;
+        }
+    }
+
+    updateUI() {
+        document.getElementById('score').textContent = this.score;
+        document.getElementById('lines').textContent = this.lines;
+        document.getElementById('level').textContent = this.level;
+        document.getElementById('blocksPlaced').textContent = this.blocksPlaced;
+    }
+
+    gameOver() {
+        this.gameState = 'gameOver';
+        this.playSound(this.gameOverSound);
+        this.backgroundMusic.pause();
+        
+        document.getElementById('finalScore').textContent = this.score;
+        document.getElementById('finalLines').textContent = this.lines;
+        document.getElementById('gameOverScreen').classList.remove('hidden');
+    }
+
+    start() {
+        this.gameState = 'playing';
+        document.getElementById('startScreen').classList.add('hidden');
+        
+        if (this.musicEnabled) {
+            this.backgroundMusic.play().catch(e => console.log("Music play failed:", e));
+        }
+        
+        this.draw();
+    }
+
+    reset() {
+        this.score = 0;
+        this.lines = 0;
+        this.level = 1;
+        this.blocksPlaced = 0;
+        this.resetDrag();
+        this.init();
+        this.draw();
+    }
+}
+
+// Funciones globales
+let blockGame;
+
+function startGame() {
+    blockGame = new BlockPuzzleGame();
+    blockGame.start();
+}
+
+function restartGame() {
+    document.getElementById('gameOverScreen').classList.add('hidden');
+    startGame();
+}
+
+function rotatePiece(index) {
+    if (blockGame) {
+        blockGame.rotatePiece(index);
+    }
+}
+
+function resetGame() {
+    if (blockGame) {
+        blockGame.reset();
+        blockGame.start();
+    }
+}
+
+function toggleMusic() {
+    if (blockGame) {
+        blockGame.toggleMusic();
+    }
+}
+
+// Iniciar cuando se carga la página
+window.onload = function() {
+    blockGame = new BlockPuzzleGame();
+};
+    </script>
+</body>
+</html>
