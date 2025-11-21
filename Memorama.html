@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Memorama Rapunzel</title>
+  <title>Memorama</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -129,6 +129,7 @@
       box-shadow: 0 8px 30px rgba(2, 6, 23, 0.7);
       display: flex;
       flex-direction: column;
+      min-height: 500px;
     }
 
     .stats-container {
@@ -156,6 +157,20 @@
     .stat-label {
       font-size: 0.9rem;
       color: #d8c3ff;
+    }
+
+    .level-display {
+      background: linear-gradient(90deg, var(--purple), var(--accent));
+      padding: 10px;
+      border-radius: 10px;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .level-text {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: var(--light);
     }
 
     .timer-critical {
@@ -265,6 +280,8 @@
       border-radius: 15px;
       border: 2px solid rgba(255, 255, 255, 0.1);
       flex-grow: 1;
+      /* Tamaño base que se ajustará dinámicamente */
+      grid-template-columns: repeat(3, 1fr);
     }
 
     .card {
@@ -272,6 +289,8 @@
       aspect-ratio: 1/1;
       perspective: 1000px;
       cursor: pointer;
+      /* Tamaño inicial grande para pocas cartas */
+      max-width: 120px;
     }
 
     .card-inner {
@@ -311,11 +330,11 @@
     .face.front {
       background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
       transform: rotateY(180deg);
-      font-size: 32px;
     }
 
     .face.front .emoji {
-      font-size: 36px;
+      /* El tamaño de fuente se ajustará dinámicamente */
+      font-size: 24px;
     }
 
     .card.matched {
@@ -341,15 +360,22 @@
       animation: pulse 900ms ease-out;
     }
 
-    /* Grid sizes */
+    /* Grid sizes dinámicos */
+    .grid-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
     .grid-4 {
       grid-template-columns: repeat(4, 1fr);
     }
-
+    .grid-5 {
+      grid-template-columns: repeat(5, 1fr);
+    }
     .grid-6 {
       grid-template-columns: repeat(6, 1fr);
     }
-
+    .grid-7 {
+      grid-template-columns: repeat(7, 1fr);
+    }
     .grid-8 {
       grid-template-columns: repeat(8, 1fr);
     }
@@ -446,6 +472,7 @@
       
       .game-board {
         order: 1;
+        min-height: 400px;
       }
     }
 
@@ -466,6 +493,10 @@
       .powerups {
         grid-template-columns: 1fr;
       }
+      
+      .card {
+        max-width: 80px;
+      }
     }
 
     @media (max-width: 400px) {
@@ -475,6 +506,10 @@
       
       h1::before, h1::after {
         display: none;
+      }
+      
+      .card {
+        max-width: 70px;
       }
     }
 
@@ -523,16 +558,21 @@
 
 <div class="container">
   <div class="header">
-    <h1>Memorama Rapunzel</h1>
-    <p class="subtitle">¡Encuentra todas las parejas antes de que se acabe el tiempo!</p>
+    <h1>Memorama</h1>
+    <p class="subtitle">¡Encuentra las parejas antes de que se acabe el tiempo!</p>
   </div>
 
   <div class="game-container">
     <div class="controls-panel">
+      <div class="level-display">
+        <div class="level-text">Nivel: <span id="level">1</span></div>
+        <div class="level-text">Cartas: <span id="totalCards">6</span></div>
+      </div>
+      
       <div class="stats-container">
         <div class="stat-card">
           <div class="stat-label">Tiempo</div>
-          <div class="stat-value" id="timer">02:00</div>
+          <div class="stat-value" id="timer">00:30</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Movimientos</div>
@@ -540,7 +580,7 @@
         </div>
         <div class="stat-card">
           <div class="stat-label">Parejas</div>
-          <div class="stat-value" id="matches">0/8</div>
+          <div class="stat-value" id="matches">0/3</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Puntos</div>
@@ -556,7 +596,7 @@
         <div class="powerups">
           <button class="powerup" id="powerup-time">
             <div class="powerup-icon">⏱️</div>
-            <div class="powerup-name">+15 Segundos</div>
+            <div class="powerup-name">+10 Segundos</div>
             <div class="powerup-cost">50 pts</div>
           </button>
           <button class="powerup" id="powerup-freeze">
@@ -576,12 +616,6 @@
           </button>
         </div>
 
-        <select class="btn" id="difficulty">
-          <option value="120">Fácil (2:00)</option>
-          <option value="90">Normal (1:30)</option>
-          <option value="60">Difícil (1:00)</option>
-        </select>
-
         <button class="btn" id="btn-sound">
           <span>🔊</span> Sonido: Activado
         </button>
@@ -589,24 +623,20 @@
     </div>
 
     <div class="game-board">
-      <div id="board" class="board grid-4"></div>
+      <div id="board" class="board grid-3"></div>
     </div>
   </div>
 </div>
 
 <div class="game-over" id="gameOver">
   <div class="game-over-content">
-    <h2 id="gameOverTitle">¡Tiempo Agotado!</h2>
-    <p id="gameOverMessage">No lograste encontrar todas las parejas a tiempo.</p>
+    <h2 id="gameOverTitle">¡Nivel Completado!</h2>
+    <p id="gameOverMessage">Has encontrado todas las parejas. ¿Listo para el siguiente nivel?</p>
     
     <div class="result-stats">
       <div class="result-stat">
-        <div class="result-label">Puntuación Final</div>
+        <div class="result-label">Puntuación</div>
         <div class="result-value" id="finalScore">0</div>
-      </div>
-      <div class="result-stat">
-        <div class="result-label">Parejas Encontradas</div>
-        <div class="result-value" id="finalMatches">0/8</div>
       </div>
       <div class="result-stat">
         <div class="result-label">Movimientos</div>
@@ -616,9 +646,14 @@
         <div class="result-label">Tiempo Restante</div>
         <div class="result-value" id="finalTime">00:00</div>
       </div>
+      <div class="result-stat">
+        <div class="result-label">Nivel Alcanzado</div>
+        <div class="result-value" id="finalLevel">1</div>
+      </div>
     </div>
     
-    <button class="btn primary" id="btn-play-again">Jugar de Nuevo</button>
+    <button class="btn primary" id="btn-next-level">Siguiente Nivel</button>
+    <button class="btn" id="btn-play-again" style="margin-top: 10px;">Jugar de Nuevo</button>
   </div>
 </div>
 
@@ -633,16 +668,18 @@
   const movesEl = document.getElementById('moves');
   const matchesEl = document.getElementById('matches');
   const scoreEl = document.getElementById('score');
+  const levelEl = document.getElementById('level');
+  const totalCardsEl = document.getElementById('totalCards');
   const btnRestart = document.getElementById('btn-restart');
   const btnSound = document.getElementById('btn-sound');
-  const difficultySel = document.getElementById('difficulty');
   const gameOverEl = document.getElementById('gameOver');
   const gameOverTitle = document.getElementById('gameOverTitle');
   const gameOverMessage = document.getElementById('gameOverMessage');
   const finalScoreEl = document.getElementById('finalScore');
-  const finalMatchesEl = document.getElementById('finalMatches');
   const finalMovesEl = document.getElementById('finalMoves');
   const finalTimeEl = document.getElementById('finalTime');
+  const finalLevelEl = document.getElementById('finalLevel');
+  const btnNextLevel = document.getElementById('btn-next-level');
   const btnPlayAgain = document.getElementById('btn-play-again');
 
   // Power-ups
@@ -664,8 +701,9 @@
   let lockBoard = false;
   let moves = 0;
   let matches = 0;
-  let pairs = 8;
-  let timeLeft = 120;
+  let currentLevel = 1;
+  let pairs = 3; // Comienza con 3 parejas (6 cartas)
+  let timeLeft = 30; // Comienza con 30 segundos
   let timerInterval = null;
   let score = 0;
   let soundOn = true;
@@ -682,30 +720,49 @@
 
   // Inicializar el juego
   function initGame() {
-    const difficulty = parseInt(difficultySel.value);
-    timeLeft = difficulty;
-    updateTimerDisplay();
+    // Reiniciar estado del juego
+    currentLevel = 1;
+    pairs = 3;
+    timeLeft = 30;
+    score = 0;
     
-    buildBoard(pairs);
+    updateLevelDisplay();
+    buildBoard();
     updatePowerups();
   }
 
+  // Avanzar al siguiente nivel
+  function nextLevel() {
+    currentLevel++;
+    pairs += 1; // Añadir 1 pareja (2 cartas) por nivel
+    timeLeft += 10; // Añadir 10 segundos por nivel
+    
+    updateLevelDisplay();
+    buildBoard();
+    updatePowerups();
+    gameOverEl.classList.remove('active');
+  }
+
+  function updateLevelDisplay() {
+    levelEl.textContent = currentLevel;
+    totalCardsEl.textContent = pairs * 2;
+    matchesEl.textContent = `0/${pairs}`;
+    updateTimerDisplay();
+  }
+
   // Construir el tablero
-  function buildBoard(pairCount) {
-    pairs = pairCount;
+  function buildBoard() {
     cards = [];
     firstCard = null;
     secondCard = null;
     lockBoard = false;
     moves = 0;
     matches = 0;
-    score = 0;
-    freezeTime = false;
     
     // Actualizar UI
     movesEl.textContent = '0';
     matchesEl.textContent = `0/${pairs}`;
-    scoreEl.textContent = '0';
+    scoreEl.textContent = score;
     
     // Detener temporizador anterior
     if (timerInterval) clearInterval(timerInterval);
@@ -715,11 +772,11 @@
     boardEl.innerHTML = '';
     
     // Seleccionar emojis aleatorios
-    const selectedEmojis = shuffleArray([...EMOJIS]).slice(0, pairCount);
+    const selectedEmojis = shuffleArray([...EMOJIS]).slice(0, pairs);
     const deck = shuffleArray([...selectedEmojis, ...selectedEmojis]);
     
-    // Configurar grid
-    setGridClassByPairs(pairCount);
+    // Configurar grid dinámicamente según el número de cartas
+    setGridClassByCards(pairs * 2);
 
     // Crear cartas
     deck.forEach((emoji, index) => {
@@ -748,11 +805,59 @@
       cards.push(card);
     });
 
-    // Ajustar tamaño de fuente
-    adjustCardFont();
+    // Ajustar tamaño de fuente y cartas
+    adjustCardSize();
     
     // Mostrar todas las cartas al inicio
     showAllCardsInitially();
+  }
+
+  // Configurar grid según número de cartas
+  function setGridClassByCards(totalCards) {
+    // Remover todas las clases de grid
+    boardEl.classList.remove('grid-3', 'grid-4', 'grid-5', 'grid-6', 'grid-7', 'grid-8');
+    
+    // Determinar el layout óptimo
+    let columns;
+    if (totalCards <= 6) columns = 3;
+    else if (totalCards <= 12) columns = 4;
+    else if (totalCards <= 20) columns = 5;
+    else if (totalCards <= 30) columns = 6;
+    else if (totalCards <= 42) columns = 7;
+    else columns = 8;
+    
+    // Aplicar la clase correspondiente
+    boardEl.classList.add(`grid-${columns}`);
+  }
+
+  // Ajustar tamaño de cartas y fuentes dinámicamente
+  function adjustCardSize() {
+    const totalCards = pairs * 2;
+    
+    // Ajustar tamaño máximo de las cartas según el número de cartas
+    let maxCardSize;
+    if (totalCards <= 6) maxCardSize = 120;
+    else if (totalCards <= 12) maxCardSize = 100;
+    else if (totalCards <= 20) maxCardSize = 80;
+    else if (totalCards <= 30) maxCardSize = 70;
+    else maxCardSize = 60;
+    
+    // Aplicar el tamaño máximo a todas las cartas
+    document.querySelectorAll('.card').forEach(card => {
+      card.style.maxWidth = `${maxCardSize}px`;
+    });
+    
+    // Ajustar tamaño de fuente de los emojis
+    const emojiSize = Math.max(16, Math.min(32, Math.floor(maxCardSize * 0.3)));
+    document.querySelectorAll('.face.front .emoji').forEach(emoji => {
+      emoji.style.fontSize = `${emojiSize}px`;
+    });
+    
+    // Ajustar tamaño de fuente del reverso
+    const backSize = Math.max(20, Math.min(28, Math.floor(maxCardSize * 0.25)));
+    document.querySelectorAll('.face.back div').forEach(back => {
+      back.style.fontSize = `${backSize}px`;
+    });
   }
 
   // Mostrar cartas al inicio
@@ -882,17 +987,17 @@
     gameActive = false;
     
     if (isWin) {
-      gameOverTitle.textContent = '¡Felicidades!';
-      gameOverMessage.textContent = 'Has encontrado todas las parejas.';
+      gameOverTitle.textContent = '¡Nivel Completado!';
+      gameOverMessage.textContent = `Has encontrado todas las parejas del nivel ${currentLevel}. ¿Listo para el siguiente nivel?`;
     } else {
       gameOverTitle.textContent = '¡Tiempo Agotado!';
-      gameOverMessage.textContent = 'No lograste encontrar todas las parejas a tiempo.';
+      gameOverMessage.textContent = `No lograste completar el nivel ${currentLevel}.`;
     }
     
     finalScoreEl.textContent = score;
-    finalMatchesEl.textContent = `${matches}/${pairs}`;
     finalMovesEl.textContent = moves;
     finalTimeEl.textContent = timerEl.textContent;
+    finalLevelEl.textContent = currentLevel;
     
     gameOverEl.classList.add('active');
   }
@@ -910,7 +1015,7 @@
     
     score -= POWERUP_COSTS.time;
     scoreEl.textContent = score;
-    timeLeft += 15;
+    timeLeft += 10;
     updateTimerDisplay();
     
     timerEl.classList.add('time-bonus');
@@ -1006,25 +1111,6 @@
     return array;
   }
 
-  function setGridClassByPairs(pairCount) {
-    boardEl.classList.remove('grid-4', 'grid-6', 'grid-8');
-    if (pairCount === 8) boardEl.classList.add('grid-4');
-    if (pairCount === 12) boardEl.classList.add('grid-6');
-    if (pairCount === 18) boardEl.classList.add('grid-8');
-  }
-
-  function adjustCardFont() {
-    const card = cards[0];
-    if (!card) return;
-    
-    const width = card.getBoundingClientRect().width;
-    const fontSize = Math.max(20, Math.min(48, Math.floor(width * 0.35)));
-    
-    document.querySelectorAll('.face.front .emoji').forEach(el => {
-      el.style.fontSize = fontSize + 'px';
-    });
-  }
-
   // Sonido
   function playSound(freq = 330, duration = 0.06) {
     if (!soundOn) return;
@@ -1050,11 +1136,11 @@
 
   // Event Listeners
   btnRestart.addEventListener('click', initGame);
+  btnNextLevel.addEventListener('click', nextLevel);
   btnPlayAgain.addEventListener('click', () => {
     gameOverEl.classList.remove('active');
     initGame();
   });
-  difficultySel.addEventListener('change', initGame);
 
   btnSound.addEventListener('click', () => {
     soundOn = !soundOn;
@@ -1067,8 +1153,8 @@
   powerupReveal.addEventListener('click', usePowerupReveal);
   powerupShuffle.addEventListener('click', usePowerupShuffle);
 
-  // Ajustar fuentes al cambiar tamaño de ventana
-  window.addEventListener('resize', adjustCardFont);
+  // Ajustar tamaño de cartas al cambiar tamaño de ventana
+  window.addEventListener('resize', adjustCardSize);
 
   // Iniciar juego
   initGame();
