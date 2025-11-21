@@ -562,713 +562,756 @@
 
     <!-- Audio elements -->
     <audio id="backgroundMusic" loop preload="auto">
-        <source src="Musica/fondo.mp3" type="audio/mpeg">
+        <source src="https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3" type="audio/mpeg">
     </audio>
     <audio id="lineCompleteSound" preload="auto">
-        <source src="Musica/lineacompletada.mp3" type="audio/mpeg">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" type="audio/mpeg">
     </audio>
     <audio id="piecePlaceSound" preload="auto">
-        <source src="Musica/game-start.mp3" type="audio/mpeg">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3" type="audio/mpeg">
     </audio>
     <audio id="gameOverSound" preload="auto">
-        <source src="Musica/game-over.mp3" type="audio/mpeg">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-sad-game-over-trombone-471.mp3" type="audio/mpeg">
     </audio>
     <audio id="rotateSound" preload="auto">
-        <source src="Musica/girar.mp3" type="audio/mpeg">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-cool-interface-click-tone-2568.mp3" type="audio/mpeg">
     </audio>
 
     <script>
         class BlockPuzzleGame {
-    constructor() {
-        this.mainCanvas = document.getElementById('mainBoard');
-        this.mainCtx = this.mainCanvas.getContext('2d');
-        this.nextCanvas = document.getElementById('nextPiecesBoard');
-        this.nextCtx = this.nextCanvas.getContext('2d');
-        this.currentCanvas = document.getElementById('currentPiecesBoard');
-        this.currentCtx = this.currentCanvas.getContext('2d');
-        
-        this.gameState = 'menu';
-        this.score = 0;
-        this.lines = 0;
-        this.level = 1;
-        this.blocksPlaced = 0;
-        
-        this.boardSize = 10;
-        this.cellSize = 0;
-        
-        // Elementos de audio
-        this.backgroundMusic = document.getElementById('backgroundMusic');
-        this.lineCompleteSound = document.getElementById('lineCompleteSound');
-        this.piecePlaceSound = document.getElementById('piecePlaceSound');
-        this.gameOverSound = document.getElementById('gameOverSound');
-        this.rotateSound = document.getElementById('rotateSound');
-        
-        // Control de música
-        this.musicEnabled = true;
-        
-        // Estado del arrastre
-        this.isDragging = false;
-        this.draggingPiece = null;
-        this.draggingPieceIndex = -1;
-        this.dragStartX = 0;
-        this.dragStartY = 0;
-        this.currentDragX = 0;
-        this.currentDragY = 0;
-        this.activeTouchId = null;
-        this.lastTap = 0;
-        
-        this.init();
-        this.setupEventListeners();
-        this.setupResponsiveBehavior();
-        this.preloadSounds();
-    }
-
-    preloadSounds() {
-        const sounds = [
-            this.backgroundMusic,
-            this.lineCompleteSound,
-            this.piecePlaceSound,
-            this.gameOverSound,
-            this.rotateSound
-        ];
-        
-        sounds.forEach(sound => {
-            sound.load();
-        });
-    }
-
-    setupResponsiveBehavior() {
-        this.resizeCanvases();
-        window.addEventListener('resize', () => {
-            this.resizeCanvases();
-            this.draw();
-        });
-    }
-
-    resizeCanvases() {
-        const isMobile = window.innerWidth < 768;
-        const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
-        const isDesktop = window.innerWidth >= 1024;
-        
-        // Tamaños optimizados para cada dispositivo
-        if (isMobile) {
-            this.cellSize = Math.min(window.innerWidth * 0.09, 40);
-        } else if (isTablet) {
-            this.cellSize = Math.min(window.innerWidth * 0.07, 50);
-        } else {
-            this.cellSize = Math.min(window.innerWidth * 0.06, 60);
-        }
-        
-        // Canvas principal - más grande en escritorio
-        const mainBoardSize = this.boardSize * this.cellSize;
-        this.mainCanvas.width = mainBoardSize;
-        this.mainCanvas.height = mainBoardSize;
-        this.mainCanvas.style.width = mainBoardSize + 'px';
-        this.mainCanvas.style.height = mainBoardSize + 'px';
-        
-        // Canvas de piezas actuales
-        const currentBoardWidth = isDesktop ? 400 : Math.min(800, window.innerWidth * 0.95);
-        const currentBoardHeight = isMobile ? 120 : (isDesktop ? 200 : 150);
-        this.currentCanvas.width = currentBoardWidth;
-        this.currentCanvas.height = currentBoardHeight;
-        this.currentCanvas.style.width = currentBoardWidth + 'px';
-        this.currentCanvas.style.height = currentBoardHeight + 'px';
-        
-        // Canvas de próximas piezas - horizontal
-        const nextBoardWidth = isMobile ? Math.min(400, window.innerWidth * 0.9) : 300;
-        const nextBoardHeight = isMobile ? 80 : (isDesktop ? 120 : 200);
-        this.nextCanvas.width = nextBoardWidth;
-        this.nextCanvas.height = nextBoardHeight;
-        this.nextCanvas.style.width = nextBoardWidth + 'px';
-        this.nextCanvas.style.height = nextBoardHeight + 'px';
-        
-        this.draw();
-    }
-
-    init() {
-        this.board = Array(this.boardSize).fill().map(() => Array(this.boardSize).fill(0));
-        this.currentPieces = [];
-        this.nextPieces = [];
-        this.generateInitialPieces();
-        this.updateUI();
-    }
-
-    generateInitialPieces() {
-        this.currentPieces = [];
-        for (let i = 0; i < 3; i++) {
-            this.currentPieces.push(this.generateRandomPiece());
-        }
-        
-        this.nextPieces = [];
-        for (let i = 0; i < 3; i++) {
-            this.nextPieces.push(this.generateRandomPiece());
-        }
-    }
-
-    generateRandomPiece() {
-        const pieces = [
-            { shape: [[1,1],[1,1]], size: 2 },
-            { shape: [[1,0],[1,0],[1,1]], size: 3 },
-            { shape: [[0,1],[0,1],[1,1]], size: 3 },
-            { shape: [[1,1,1]], size: 3 },
-            { shape: [[1],[1],[1]], size: 3 },
-            { shape: [[1,1,1],[0,1,0]], size: 3 },
-            { shape: [[1,1,0],[0,1,1]], size: 3 },
-            { shape: [[0,1,1],[1,1,0]], size: 3 },
-            { shape: [[1]], size: 1 },
-            { shape: [[0,1,0],[1,1,1],[0,1,0]], size: 3 }
-        ];
-        
-        const pieceTemplate = pieces[Math.floor(Math.random() * pieces.length)];
-        return {
-            shape: JSON.parse(JSON.stringify(pieceTemplate.shape)),
-            color: this.getRandomColor(),
-            size: pieceTemplate.size,
-            id: Math.random().toString(36).substr(2, 9)
-        };
-    }
-
-    getRandomColor() {
-        const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'];
-        return colors[Math.floor(Math.random() * colors.length)];
-    }
-
-    setupEventListeners() {
-        this.currentCanvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
-        this.currentCanvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
-        
-        document.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-        document.addEventListener('mouseup', (e) => this.handleMouseUp(e));
-        document.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
-        document.addEventListener('touchend', (e) => this.handleTouchEnd(e));
-        document.addEventListener('touchcancel', (e) => this.handleTouchEnd(e));
-        
-        this.currentCanvas.addEventListener('dragstart', (e) => e.preventDefault());
-        this.currentCanvas.addEventListener('touchend', (e) => this.handleDoubleTap(e));
-    }
-
-    handleMouseDown(e) {
-        if (this.gameState !== 'playing') return;
-        const rect = this.currentCanvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        this.startDrag(x, y, e.clientX, e.clientY);
-    }
-
-    handleTouchStart(e) {
-        if (this.gameState !== 'playing') return;
-        if (this.activeTouchId !== null) return;
-        
-        const touch = e.touches[0];
-        this.activeTouchId = touch.identifier;
-        const rect = this.currentCanvas.getBoundingClientRect();
-        const x = touch.clientX - rect.left;
-        const y = touch.clientY - rect.top;
-        this.startDrag(x, y, touch.clientX, touch.clientY);
-        e.preventDefault();
-    }
-
-    startDrag(localX, localY, globalX, globalY) {
-        const pieceIndex = this.findPieceAt(localX, localY);
-        if (pieceIndex !== -1) {
-            this.isDragging = true;
-            this.draggingPiece = JSON.parse(JSON.stringify(this.currentPieces[pieceIndex]));
-            this.draggingPieceIndex = pieceIndex;
-            this.dragStartX = globalX;
-            this.dragStartY = globalY;
-            this.currentDragX = globalX;
-            this.currentDragY = globalY;
-            this.currentCanvas.classList.add('dragging');
-            this.draw();
-        }
-    }
-
-    handleMouseMove(e) {
-        if (!this.isDragging) return;
-        this.currentDragX = e.clientX;
-        this.currentDragY = e.clientY;
-        this.draw();
-    }
-
-    handleTouchMove(e) {
-        if (!this.isDragging) return;
-        for (let touch of e.touches) {
-            if (touch.identifier === this.activeTouchId) {
-                this.currentDragX = touch.clientX;
-                this.currentDragY = touch.clientY;
-                this.draw();
-                break;
+            constructor() {
+                this.mainCanvas = document.getElementById('mainBoard');
+                this.mainCtx = this.mainCanvas.getContext('2d');
+                this.nextCanvas = document.getElementById('nextPiecesBoard');
+                this.nextCtx = this.nextCanvas.getContext('2d');
+                this.currentCanvas = document.getElementById('currentPiecesBoard');
+                this.currentCtx = this.currentCanvas.getContext('2d');
+                
+                this.gameState = 'menu';
+                this.score = 0;
+                this.lines = 0;
+                this.level = 1;
+                this.blocksPlaced = 0;
+                
+                this.boardSize = 10;
+                this.cellSize = 0;
+                
+                // Elementos de audio
+                this.backgroundMusic = document.getElementById('backgroundMusic');
+                this.lineCompleteSound = document.getElementById('lineCompleteSound');
+                this.piecePlaceSound = document.getElementById('piecePlaceSound');
+                this.gameOverSound = document.getElementById('gameOverSound');
+                this.rotateSound = document.getElementById('rotateSound');
+                
+                // Control de música
+                this.musicEnabled = true;
+                
+                // Estado del arrastre
+                this.isDragging = false;
+                this.draggingPiece = null;
+                this.draggingPieceIndex = -1;
+                this.dragStartX = 0;
+                this.dragStartY = 0;
+                this.currentDragX = 0;
+                this.currentDragY = 0;
+                this.activeTouchId = null;
+                this.lastTap = 0;
+                
+                // Control de scroll en móviles
+                this.preventScroll = false;
+                this.startY = 0;
+                this.currentY = 0;
+                
+                this.init();
+                this.setupEventListeners();
+                this.setupResponsiveBehavior();
+                this.preloadSounds();
             }
-        }
-        e.preventDefault();
-    }
 
-    handleMouseUp(e) {
-        if (!this.isDragging) return;
-        const rect = this.mainCanvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        this.finishDrag(x, y);
-    }
+            preloadSounds() {
+                const sounds = [
+                    this.backgroundMusic,
+                    this.lineCompleteSound,
+                    this.piecePlaceSound,
+                    this.gameOverSound,
+                    this.rotateSound
+                ];
+                
+                sounds.forEach(sound => {
+                    sound.load();
+                });
+            }
 
-    handleTouchEnd(e) {
-        if (!this.isDragging) return;
-        const touch = e.changedTouches[0];
-        const rect = this.mainCanvas.getBoundingClientRect();
-        const x = touch.clientX - rect.left;
-        const y = touch.clientY - rect.top;
-        this.finishDrag(x, y);
-        this.activeTouchId = null;
-    }
+            setupResponsiveBehavior() {
+                this.resizeCanvases();
+                window.addEventListener('resize', () => {
+                    this.resizeCanvases();
+                    this.draw();
+                });
+            }
 
-    handleDoubleTap(e) {
-        if (this.gameState !== 'playing') return;
-        const currentTime = Date.now();
-        if (currentTime - this.lastTap < 300) {
-            const touch = e.changedTouches[0];
-            const rect = this.currentCanvas.getBoundingClientRect();
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-            const pieceIndex = this.findPieceAt(x, y);
-            if (pieceIndex !== -1) this.rotatePiece(pieceIndex);
-            e.preventDefault();
-        }
-        this.lastTap = currentTime;
-    }
+            resizeCanvases() {
+                const isMobile = window.innerWidth < 768;
+                const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
+                const isDesktop = window.innerWidth >= 1024;
+                
+                // Tamaños optimizados para cada dispositivo
+                if (isMobile) {
+                    this.cellSize = Math.min(window.innerWidth * 0.09, 40);
+                } else if (isTablet) {
+                    this.cellSize = Math.min(window.innerWidth * 0.07, 50);
+                } else {
+                    this.cellSize = Math.min(window.innerWidth * 0.06, 60);
+                }
+                
+                // Canvas principal - más grande en escritorio
+                const mainBoardSize = this.boardSize * this.cellSize;
+                this.mainCanvas.width = mainBoardSize;
+                this.mainCanvas.height = mainBoardSize;
+                this.mainCanvas.style.width = mainBoardSize + 'px';
+                this.mainCanvas.style.height = mainBoardSize + 'px';
+                
+                // Canvas de piezas actuales
+                const currentBoardWidth = isDesktop ? 400 : Math.min(800, window.innerWidth * 0.95);
+                const currentBoardHeight = isMobile ? 120 : (isDesktop ? 200 : 150);
+                this.currentCanvas.width = currentBoardWidth;
+                this.currentCanvas.height = currentBoardHeight;
+                this.currentCanvas.style.width = currentBoardWidth + 'px';
+                this.currentCanvas.style.height = currentBoardHeight + 'px';
+                
+                // Canvas de próximas piezas - horizontal
+                const nextBoardWidth = isMobile ? Math.min(400, window.innerWidth * 0.9) : 300;
+                const nextBoardHeight = isMobile ? 80 : (isDesktop ? 120 : 200);
+                this.nextCanvas.width = nextBoardWidth;
+                this.nextCanvas.height = nextBoardHeight;
+                this.nextCanvas.style.width = nextBoardWidth + 'px';
+                this.nextCanvas.style.height = nextBoardHeight + 'px';
+                
+                this.draw();
+            }
 
-    finishDrag(x, y) {
-        if (!this.isDragging || !this.draggingPiece) return;
-        
-        const gridX = Math.floor(x / this.cellSize);
-        const gridY = Math.floor(y / this.cellSize);
-        
-        if (this.canPlacePiece(this.draggingPiece, gridX, gridY)) {
-            this.placePiece(this.draggingPiece, gridX, gridY);
-            this.playSound(this.piecePlaceSound);
-            this.currentPieces.splice(this.draggingPieceIndex, 1);
-            this.checkLines();
-            
-            if (this.currentPieces.length === 0) {
-                this.currentPieces = this.nextPieces;
+            init() {
+                this.board = Array(this.boardSize).fill().map(() => Array(this.boardSize).fill(0));
+                this.currentPieces = [];
+                this.nextPieces = [];
+                this.generateInitialPieces();
+                this.updateUI();
+            }
+
+            generateInitialPieces() {
+                this.currentPieces = [];
+                for (let i = 0; i < 3; i++) {
+                    this.currentPieces.push(this.generateRandomPiece());
+                }
+                
                 this.nextPieces = [];
                 for (let i = 0; i < 3; i++) {
                     this.nextPieces.push(this.generateRandomPiece());
                 }
             }
-            
-            this.score += 10;
-            
-            if (!this.hasValidMovesForAllPieces()) {
-                setTimeout(() => this.gameOver(), 1000);
+
+            generateRandomPiece() {
+                const pieces = [
+                    { shape: [[1,1],[1,1]], size: 2 },
+                    { shape: [[1,0],[1,0],[1,1]], size: 3 },
+                    { shape: [[0,1],[0,1],[1,1]], size: 3 },
+                    { shape: [[1,1,1]], size: 3 },
+                    { shape: [[1],[1],[1]], size: 3 },
+                    { shape: [[1,1,1],[0,1,0]], size: 3 },
+                    { shape: [[1,1,0],[0,1,1]], size: 3 },
+                    { shape: [[0,1,1],[1,1,0]], size: 3 },
+                    { shape: [[1]], size: 1 },
+                    { shape: [[0,1,0],[1,1,1],[0,1,0]], size: 3 }
+                ];
+                
+                const pieceTemplate = pieces[Math.floor(Math.random() * pieces.length)];
+                return {
+                    shape: JSON.parse(JSON.stringify(pieceTemplate.shape)),
+                    color: this.getRandomColor(),
+                    size: pieceTemplate.size,
+                    id: Math.random().toString(36).substr(2, 9)
+                };
             }
-        } else {
-            this.playSound(this.rotateSound);
-        }
-        
-        this.resetDrag();
-        this.draw();
-        this.updateUI();
-    }
 
-    resetDrag() {
-        this.isDragging = false;
-        this.draggingPiece = null;
-        this.draggingPieceIndex = -1;
-        this.activeTouchId = null;
-        this.currentCanvas.classList.remove('dragging');
-    }
-
-    findPieceAt(x, y) {
-        const pieceWidth = this.currentCanvas.width / 3;
-        const blockSize = Math.min(pieceWidth / 5, this.currentCanvas.height / 3);
-        
-        for (let i = 0; i < this.currentPieces.length; i++) {
-            const piece = this.currentPieces[i];
-            const pieceX = pieceWidth * i + pieceWidth / 2;
-            const pieceY = this.currentCanvas.height / 2;
-            const pieceDisplayWidth = piece.shape[0].length * blockSize;
-            const pieceDisplayHeight = piece.shape.length * blockSize;
-            
-            if (x >= pieceX - pieceDisplayWidth / 2 && x <= pieceX + pieceDisplayWidth / 2 &&
-                y >= pieceY - pieceDisplayHeight / 2 && y <= pieceY + pieceDisplayHeight / 2) {
-                return i;
+            getRandomColor() {
+                const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'];
+                return colors[Math.floor(Math.random() * colors.length)];
             }
-        }
-        return -1;
-    }
 
-    canPlacePiece(piece, gridX, gridY) {
-        if (gridX < 0 || gridY < 0) return false;
-        
-        for (let y = 0; y < piece.shape.length; y++) {
-            for (let x = 0; x < piece.shape[y].length; x++) {
-                if (piece.shape[y][x] === 1) {
-                    const boardX = gridX + x;
-                    const boardY = gridY + y;
-                    if (boardX >= this.boardSize || boardY >= this.boardSize || this.board[boardY][boardX] !== 0) {
-                        return false;
+            setupEventListeners() {
+                this.currentCanvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+                this.currentCanvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+                
+                document.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                document.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+                document.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+                document.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+                document.addEventListener('touchcancel', (e) => this.handleTouchEnd(e));
+                
+                this.currentCanvas.addEventListener('dragstart', (e) => e.preventDefault());
+                this.currentCanvas.addEventListener('touchend', (e) => this.handleDoubleTap(e));
+                
+                // Prevenir scroll en iOS durante el arrastre
+                document.addEventListener('touchmove', (e) => {
+                    if (this.preventScroll && this.isDragging) {
+                        e.preventDefault();
                     }
+                }, { passive: false });
+            }
+
+            handleMouseDown(e) {
+                if (this.gameState !== 'playing') return;
+                const rect = this.currentCanvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                this.startDrag(x, y, e.clientX, e.clientY);
+            }
+
+            handleTouchStart(e) {
+                if (this.gameState !== 'playing') return;
+                if (this.activeTouchId !== null) return;
+                
+                const touch = e.touches[0];
+                this.activeTouchId = touch.identifier;
+                const rect = this.currentCanvas.getBoundingClientRect();
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                
+                // Guardar posición inicial para detectar scroll
+                this.startY = touch.clientY;
+                this.currentY = touch.clientY;
+                this.preventScroll = false;
+                
+                this.startDrag(x, y, touch.clientX, touch.clientY);
+                e.preventDefault();
+            }
+
+            startDrag(localX, localY, globalX, globalY) {
+                const pieceIndex = this.findPieceAt(localX, localY);
+                if (pieceIndex !== -1) {
+                    this.isDragging = true;
+                    this.draggingPiece = JSON.parse(JSON.stringify(this.currentPieces[pieceIndex]));
+                    this.draggingPieceIndex = pieceIndex;
+                    this.dragStartX = globalX;
+                    this.dragStartY = globalY;
+                    this.currentDragX = globalX;
+                    this.currentDragY = globalY;
+                    this.currentCanvas.classList.add('dragging');
+                    this.draw();
                 }
             }
-        }
-        return true;
-    }
 
-    placePiece(piece, gridX, gridY) {
-        for (let y = 0; y < piece.shape.length; y++) {
-            for (let x = 0; x < piece.shape[y].length; x++) {
-                if (piece.shape[y][x] === 1) {
-                    const boardX = gridX + x;
-                    const boardY = gridY + y;
-                    this.board[boardY][boardX] = { color: piece.color, pieceId: piece.id };
-                    this.blocksPlaced++;
-                }
+            handleMouseMove(e) {
+                if (!this.isDragging) return;
+                this.currentDragX = e.clientX;
+                this.currentDragY = e.clientY;
+                this.draw();
             }
-        }
-    }
 
-    checkLines() {
-        let linesCleared = 0;
-        let linesToClear = [];
-        
-        for (let y = 0; y < this.boardSize; y++) {
-            if (this.board[y].every(cell => cell !== 0)) {
-                linesToClear.push({ type: 'row', index: y });
-                linesCleared++;
-            }
-        }
-        
-        for (let x = 0; x < this.boardSize; x++) {
-            let fullColumn = true;
-            for (let y = 0; y < this.boardSize; y++) {
-                if (this.board[y][x] === 0) {
-                    fullColumn = false;
-                    break;
-                }
-            }
-            if (fullColumn) linesToClear.push({ type: 'column', index: x });
-        }
-        
-        linesToClear.forEach(line => {
-            if (line.type === 'row') this.clearLine(line.index);
-            else this.clearColumn(line.index);
-        });
-        
-        if (linesCleared > 0) {
-            this.showMessage(this.getLineMessage(linesCleared));
-            this.playSound(this.lineCompleteSound);
-            const points = linesCleared * 100 * this.level;
-            this.score += points;
-            this.lines += linesCleared;
-            this.level = Math.floor(this.lines / 5) + 1;
-        }
-    }
-
-    getLineMessage(linesCleared) {
-        const messages = {
-            1: ["¡LÍNEA COMPLETA!", "¡BIEN HECHO!", "¡PERFECTO!"],
-            2: ["¡DOBLE LÍNEA!", "¡INCREÍBLE!", "¡FANTÁSTICO!"],
-            3: ["¡TRIPLE LÍNEA!", "¡ASOMBROSO!", "¡ESPECTACULAR!"],
-            4: ["¡CUÁDRUPLE!", "¡LEGENDARIO!", "¡IMPRESIONANTE!"]
-        };
-        return (messages[linesCleared] || ["¡EXCELENTE!"])[Math.floor(Math.random() * 3)];
-    }
-
-    showMessage(text) {
-        const messageDisplay = document.getElementById('messageDisplay');
-        messageDisplay.textContent = text;
-        messageDisplay.style.display = 'block';
-        setTimeout(() => messageDisplay.style.display = 'none', 1500);
-    }
-
-    clearLine(y) {
-        for (let x = 0; x < this.boardSize; x++) this.board[y][x] = 0;
-    }
-
-    clearColumn(x) {
-        for (let y = 0; y < this.boardSize; y++) this.board[y][x] = 0;
-    }
-
-    hasValidMovesForAllPieces() {
-        for (let piece of this.currentPieces) {
-            if (this.hasValidMoveForPiece(piece)) return true;
-        }
-        return false;
-    }
-
-    hasValidMoveForPiece(piece) {
-        const testPiece = JSON.parse(JSON.stringify(piece));
-        for (let rotation = 0; rotation < 4; rotation++) {
-            for (let y = 0; y <= this.boardSize - testPiece.shape.length; y++) {
-                for (let x = 0; x <= this.boardSize - testPiece.shape[0].length; x++) {
-                    if (this.canPlacePiece(testPiece, x, y)) return true;
-                }
-            }
-            if (rotation < 3) this.rotatePieceShape(testPiece);
-        }
-        return false;
-    }
-
-    rotatePiece(pieceIndex) {
-        if (pieceIndex < this.currentPieces.length && this.gameState === 'playing') {
-            const piece = this.currentPieces[pieceIndex];
-            this.rotatePieceShape(piece);
-            this.playSound(this.rotateSound);
-            this.draw();
-        }
-    }
-
-    rotatePieceShape(piece) {
-        const rows = piece.shape.length;
-        const cols = piece.shape[0].length;
-        const newShape = [];
-        for (let x = 0; x < cols; x++) {
-            newShape[x] = [];
-            for (let y = 0; y < rows; y++) {
-                newShape[x][y] = piece.shape[rows - 1 - y][x];
-            }
-        }
-        piece.shape = newShape;
-    }
-
-    playSound(audioElement) {
-        if (this.musicEnabled) {
-            audioElement.currentTime = 0;
-            audioElement.play().catch(e => console.log("Audio play failed:", e));
-        }
-    }
-
-    toggleMusic() {
-        this.musicEnabled = !this.musicEnabled;
-        const musicButton = document.querySelector('.music-control');
-        if (this.musicEnabled) {
-            this.backgroundMusic.play().catch(e => console.log("Music play failed:", e));
-            musicButton.innerHTML = '🎵';
-        } else {
-            this.backgroundMusic.pause();
-            musicButton.innerHTML = '🔇';
-        }
-    }
-
-    draw() {
-        this.drawMainBoard();
-        this.drawNextPieces();
-        this.drawCurrentPieces();
-        
-        if (this.isDragging && this.draggingPiece) {
-            this.drawDraggingPiece();
-        }
-    }
-
-    drawDraggingPiece() {
-        const rect = this.mainCanvas.getBoundingClientRect();
-        const x = this.currentDragX - rect.left;
-        const y = this.currentDragY - rect.top;
-        
-        this.drawPiece(this.mainCtx, this.draggingPiece, x, y, this.cellSize, true);
-        
-        const gridX = Math.floor(x / this.cellSize);
-        const gridY = Math.floor(y / this.cellSize);
-        
-        if (this.canPlacePiece(this.draggingPiece, gridX, gridY)) {
-            this.drawPiecePreview(this.mainCtx, this.draggingPiece, gridX, gridY, '#00FF00');
-        } else {
-            this.drawPiecePreview(this.mainCtx, this.draggingPiece, gridX, gridY, '#FF0000');
-        }
-    }
-
-    drawPiecePreview(ctx, piece, gridX, gridY, color) {
-        ctx.save();
-        ctx.globalAlpha = 0.6;
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 3;
-        ctx.fillStyle = color + '20';
-        
-        for (let y = 0; y < piece.shape.length; y++) {
-            for (let x = 0; x < piece.shape[y].length; x++) {
-                if (piece.shape[y][x] === 1) {
-                    const boardX = gridX + x;
-                    const boardY = gridY + y;
-                    
-                    if (boardX < this.boardSize && boardY < this.boardSize) {
-                        const cellX = boardX * this.cellSize;
-                        const cellY = boardY * this.cellSize;
+            handleTouchMove(e) {
+                if (!this.isDragging) return;
+                
+                for (let touch of e.touches) {
+                    if (touch.identifier === this.activeTouchId) {
+                        // Detectar si el usuario está intentando desplazar o arrastrar
+                        this.currentY = touch.clientY;
+                        const deltaY = Math.abs(this.currentY - this.startY);
                         
-                        ctx.fillRect(cellX + 2, cellY + 2, this.cellSize - 4, this.cellSize - 4);
-                        ctx.strokeRect(cellX + 2, cellY + 2, this.cellSize - 4, this.cellSize - 4);
+                        // Si el movimiento es principalmente vertical, prevenir scroll
+                        if (deltaY > 5) {
+                            this.preventScroll = true;
+                        }
+                        
+                        this.currentDragX = touch.clientX;
+                        this.currentDragY = touch.clientY;
+                        this.draw();
+                        break;
+                    }
+                }
+                
+                // Prevenir scroll si estamos arrastrando
+                if (this.preventScroll && this.isDragging) {
+                    e.preventDefault();
+                }
+            }
+
+            handleMouseUp(e) {
+                if (!this.isDragging) return;
+                const rect = this.mainCanvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                this.finishDrag(x, y);
+            }
+
+            handleTouchEnd(e) {
+                if (!this.isDragging) return;
+                const touch = e.changedTouches[0];
+                const rect = this.mainCanvas.getBoundingClientRect();
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                this.finishDrag(x, y);
+                this.activeTouchId = null;
+                this.preventScroll = false;
+            }
+
+            handleDoubleTap(e) {
+                if (this.gameState !== 'playing') return;
+                const currentTime = Date.now();
+                if (currentTime - this.lastTap < 300) {
+                    const touch = e.changedTouches[0];
+                    const rect = this.currentCanvas.getBoundingClientRect();
+                    const x = touch.clientX - rect.left;
+                    const y = touch.clientY - rect.top;
+                    const pieceIndex = this.findPieceAt(x, y);
+                    if (pieceIndex !== -1) this.rotatePiece(pieceIndex);
+                    e.preventDefault();
+                }
+                this.lastTap = currentTime;
+            }
+
+            finishDrag(x, y) {
+                if (!this.isDragging || !this.draggingPiece) return;
+                
+                // Calcular la posición en la cuadrícula
+                const gridX = Math.floor(x / this.cellSize);
+                const gridY = Math.floor(y / this.cellSize);
+                
+                // Ajustar la posición para que la pieza se coloque correctamente
+                const adjustedGridX = Math.max(0, Math.min(gridX, this.boardSize - this.draggingPiece.shape[0].length));
+                const adjustedGridY = Math.max(0, Math.min(gridY, this.boardSize - this.draggingPiece.shape.length));
+                
+                if (this.canPlacePiece(this.draggingPiece, adjustedGridX, adjustedGridY)) {
+                    this.placePiece(this.draggingPiece, adjustedGridX, adjustedGridY);
+                    this.playSound(this.piecePlaceSound);
+                    this.currentPieces.splice(this.draggingPieceIndex, 1);
+                    this.checkLines();
+                    
+                    if (this.currentPieces.length === 0) {
+                        this.currentPieces = this.nextPieces;
+                        this.nextPieces = [];
+                        for (let i = 0; i < 3; i++) {
+                            this.nextPieces.push(this.generateRandomPiece());
+                        }
+                    }
+                    
+                    this.score += 10;
+                    
+                    if (!this.hasValidMovesForAllPieces()) {
+                        setTimeout(() => this.gameOver(), 1000);
+                    }
+                } else {
+                    this.playSound(this.rotateSound);
+                }
+                
+                this.resetDrag();
+                this.draw();
+                this.updateUI();
+            }
+
+            resetDrag() {
+                this.isDragging = false;
+                this.draggingPiece = null;
+                this.draggingPieceIndex = -1;
+                this.activeTouchId = null;
+                this.currentCanvas.classList.remove('dragging');
+            }
+
+            findPieceAt(x, y) {
+                const pieceWidth = this.currentCanvas.width / 3;
+                const blockSize = Math.min(pieceWidth / 5, this.currentCanvas.height / 3);
+                
+                for (let i = 0; i < this.currentPieces.length; i++) {
+                    const piece = this.currentPieces[i];
+                    const pieceX = pieceWidth * i + pieceWidth / 2;
+                    const pieceY = this.currentCanvas.height / 2;
+                    const pieceDisplayWidth = piece.shape[0].length * blockSize;
+                    const pieceDisplayHeight = piece.shape.length * blockSize;
+                    
+                    if (x >= pieceX - pieceDisplayWidth / 2 && x <= pieceX + pieceDisplayWidth / 2 &&
+                        y >= pieceY - pieceDisplayHeight / 2 && y <= pieceY + pieceDisplayHeight / 2) {
+                        return i;
+                    }
+                }
+                return -1;
+            }
+
+            canPlacePiece(piece, gridX, gridY) {
+                if (gridX < 0 || gridY < 0) return false;
+                
+                for (let y = 0; y < piece.shape.length; y++) {
+                    for (let x = 0; x < piece.shape[y].length; x++) {
+                        if (piece.shape[y][x] === 1) {
+                            const boardX = gridX + x;
+                            const boardY = gridY + y;
+                            if (boardX >= this.boardSize || boardY >= this.boardSize || this.board[boardY][boardX] !== 0) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+
+            placePiece(piece, gridX, gridY) {
+                for (let y = 0; y < piece.shape.length; y++) {
+                    for (let x = 0; x < piece.shape[y].length; x++) {
+                        if (piece.shape[y][x] === 1) {
+                            const boardX = gridX + x;
+                            const boardY = gridY + y;
+                            this.board[boardY][boardX] = { color: piece.color, pieceId: piece.id };
+                            this.blocksPlaced++;
+                        }
                     }
                 }
             }
-        }
-        ctx.restore();
-    }
 
-    drawMainBoard() {
-        this.mainCtx.clearRect(0, 0, this.mainCanvas.width, this.mainCanvas.height);
-        this.mainCtx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-        this.mainCtx.fillRect(0, 0, this.mainCanvas.width, this.mainCanvas.height);
-        
-        for (let y = 0; y < this.boardSize; y++) {
-            for (let x = 0; x < this.boardSize; x++) {
-                this.drawCell(this.mainCtx, x, y, this.board[y][x]);
-            }
-        }
-        
-        this.mainCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-        this.mainCtx.lineWidth = 1;
-        for (let i = 0; i <= this.boardSize; i++) {
-            this.mainCtx.beginPath();
-            this.mainCtx.moveTo(i * this.cellSize, 0);
-            this.mainCtx.lineTo(i * this.cellSize, this.boardSize * this.cellSize);
-            this.mainCtx.stroke();
-            
-            this.mainCtx.beginPath();
-            this.mainCtx.moveTo(0, i * this.cellSize);
-            this.mainCtx.lineTo(this.boardSize * this.cellSize, i * this.cellSize);
-            this.mainCtx.stroke();
-        }
-    }
-
-    drawCell(ctx, x, y, cell) {
-        const cellX = x * this.cellSize;
-        const cellY = y * this.cellSize;
-        
-        if (cell !== 0) {
-            ctx.fillStyle = cell.color;
-            ctx.fillRect(cellX + 1, cellY + 1, this.cellSize - 2, this.cellSize - 2);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(cellX + 1, cellY + 1, this.cellSize - 2, this.cellSize - 2);
-        }
-    }
-
-    drawCurrentPieces() {
-        this.currentCtx.clearRect(0, 0, this.currentCanvas.width, this.currentCanvas.height);
-        this.currentCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-        this.currentCtx.fillRect(0, 0, this.currentCanvas.width, this.currentCanvas.height);
-        
-        const pieceWidth = this.currentCanvas.width / 3;
-        const blockSize = Math.min(pieceWidth / 5, this.currentCanvas.height / 3);
-        
-        for (let i = 0; i < this.currentPieces.length; i++) {
-            const piece = this.currentPieces[i];
-            const baseX = pieceWidth * i + pieceWidth / 2;
-            const baseY = this.currentCanvas.height / 2;
-            this.drawPiece(this.currentCtx, piece, baseX, baseY, blockSize, false);
-        }
-    }
-
-    drawNextPieces() {
-        this.nextCtx.clearRect(0, 0, this.nextCanvas.width, this.nextCanvas.height);
-        this.nextCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-        this.nextCtx.fillRect(0, 0, this.nextCanvas.width, this.nextCanvas.height);
-        
-        const isMobile = window.innerWidth < 768;
-        const pieceWidth = this.nextCanvas.width / 3;
-        const pieceHeight = this.nextCanvas.height;
-        const blockSize = isMobile ? 
-            Math.min(pieceWidth / 4, pieceHeight / 3) : 
-            Math.min(pieceWidth / 5, pieceHeight / 3);
-        
-        for (let i = 0; i < this.nextPieces.length; i++) {
-            const piece = this.nextPieces[i];
-            const baseX = pieceWidth * i + pieceWidth / 2;
-            const baseY = pieceHeight / 2;
-            this.drawPiece(this.nextCtx, piece, baseX, baseY, blockSize, false);
-        }
-    }
-
-    drawPiece(ctx, piece, baseX, baseY, blockSize, isDragging) {
-        if (isDragging) ctx.globalAlpha = 0.8;
-        
-        const offsetX = - (piece.shape[0].length * blockSize) / 2;
-        const offsetY = - (piece.shape.length * blockSize) / 2;
-        
-        for (let y = 0; y < piece.shape.length; y++) {
-            for (let x = 0; x < piece.shape[y].length; x++) {
-                if (piece.shape[y][x] === 1) {
-                    const blockX = baseX + offsetX + x * blockSize;
-                    const blockY = baseY + offsetY + y * blockSize;
-                    
-                    ctx.fillStyle = piece.color;
-                    ctx.fillRect(blockX, blockY, blockSize - 2, blockSize - 2);
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-                    ctx.lineWidth = 1;
-                    ctx.strokeRect(blockX, blockY, blockSize - 2, blockSize - 2);
+            checkLines() {
+                let linesCleared = 0;
+                let linesToClear = [];
+                
+                for (let y = 0; y < this.boardSize; y++) {
+                    if (this.board[y].every(cell => cell !== 0)) {
+                        linesToClear.push({ type: 'row', index: y });
+                        linesCleared++;
+                    }
+                }
+                
+                for (let x = 0; x < this.boardSize; x++) {
+                    let fullColumn = true;
+                    for (let y = 0; y < this.boardSize; y++) {
+                        if (this.board[y][x] === 0) {
+                            fullColumn = false;
+                            break;
+                        }
+                    }
+                    if (fullColumn) linesToClear.push({ type: 'column', index: x });
+                }
+                
+                linesToClear.forEach(line => {
+                    if (line.type === 'row') this.clearLine(line.index);
+                    else this.clearColumn(line.index);
+                });
+                
+                if (linesCleared > 0) {
+                    this.showMessage(this.getLineMessage(linesCleared));
+                    this.playSound(this.lineCompleteSound);
+                    const points = linesCleared * 100 * this.level;
+                    this.score += points;
+                    this.lines += linesCleared;
+                    this.level = Math.floor(this.lines / 5) + 1;
                 }
             }
+
+            getLineMessage(linesCleared) {
+                const messages = {
+                    1: ["¡LÍNEA COMPLETA!", "¡BIEN HECHO!", "¡PERFECTO!"],
+                    2: ["¡DOBLE LÍNEA!", "¡INCREÍBLE!", "¡FANTÁSTICO!"],
+                    3: ["¡TRIPLE LÍNEA!", "¡ASOMBROSO!", "¡ESPECTACULAR!"],
+                    4: ["¡CUÁDRUPLE!", "¡LEGENDARIO!", "¡IMPRESIONANTE!"]
+                };
+                return (messages[linesCleared] || ["¡EXCELENTE!"])[Math.floor(Math.random() * 3)];
+            }
+
+            showMessage(text) {
+                const messageDisplay = document.getElementById('messageDisplay');
+                messageDisplay.textContent = text;
+                messageDisplay.style.display = 'block';
+                setTimeout(() => messageDisplay.style.display = 'none', 1500);
+            }
+
+            clearLine(y) {
+                for (let x = 0; x < this.boardSize; x++) this.board[y][x] = 0;
+            }
+
+            clearColumn(x) {
+                for (let y = 0; y < this.boardSize; y++) this.board[y][x] = 0;
+            }
+
+            hasValidMovesForAllPieces() {
+                for (let piece of this.currentPieces) {
+                    if (this.hasValidMoveForPiece(piece)) return true;
+                }
+                return false;
+            }
+
+            hasValidMoveForPiece(piece) {
+                const testPiece = JSON.parse(JSON.stringify(piece));
+                for (let rotation = 0; rotation < 4; rotation++) {
+                    for (let y = 0; y <= this.boardSize - testPiece.shape.length; y++) {
+                        for (let x = 0; x <= this.boardSize - testPiece.shape[0].length; x++) {
+                            if (this.canPlacePiece(testPiece, x, y)) return true;
+                        }
+                    }
+                    if (rotation < 3) this.rotatePieceShape(testPiece);
+                }
+                return false;
+            }
+
+            rotatePiece(pieceIndex) {
+                if (pieceIndex < this.currentPieces.length && this.gameState === 'playing') {
+                    const piece = this.currentPieces[pieceIndex];
+                    this.rotatePieceShape(piece);
+                    this.playSound(this.rotateSound);
+                    this.draw();
+                }
+            }
+
+            rotatePieceShape(piece) {
+                const rows = piece.shape.length;
+                const cols = piece.shape[0].length;
+                const newShape = [];
+                for (let x = 0; x < cols; x++) {
+                    newShape[x] = [];
+                    for (let y = 0; y < rows; y++) {
+                        newShape[x][y] = piece.shape[rows - 1 - y][x];
+                    }
+                }
+                piece.shape = newShape;
+            }
+
+            playSound(audioElement) {
+                if (this.musicEnabled) {
+                    audioElement.currentTime = 0;
+                    audioElement.play().catch(e => console.log("Audio play failed:", e));
+                }
+            }
+
+            toggleMusic() {
+                this.musicEnabled = !this.musicEnabled;
+                const musicButton = document.querySelector('.music-control');
+                if (this.musicEnabled) {
+                    this.backgroundMusic.play().catch(e => console.log("Music play failed:", e));
+                    musicButton.innerHTML = '🎵';
+                } else {
+                    this.backgroundMusic.pause();
+                    musicButton.innerHTML = '🔇';
+                }
+            }
+
+            draw() {
+                this.drawMainBoard();
+                this.drawNextPieces();
+                this.drawCurrentPieces();
+                
+                if (this.isDragging && this.draggingPiece) {
+                    this.drawDraggingPiece();
+                }
+            }
+
+            drawDraggingPiece() {
+                const rect = this.mainCanvas.getBoundingClientRect();
+                const x = this.currentDragX - rect.left;
+                const y = this.currentDragY - rect.top;
+                
+                this.drawPiece(this.mainCtx, this.draggingPiece, x, y, this.cellSize, true);
+                
+                // Calcular la posición en la cuadrícula
+                const gridX = Math.floor(x / this.cellSize);
+                const gridY = Math.floor(y / this.cellSize);
+                
+                // Ajustar la posición para que la pieza se muestre correctamente
+                const adjustedGridX = Math.max(0, Math.min(gridX, this.boardSize - this.draggingPiece.shape[0].length));
+                const adjustedGridY = Math.max(0, Math.min(gridY, this.boardSize - this.draggingPiece.shape.length));
+                
+                if (this.canPlacePiece(this.draggingPiece, adjustedGridX, adjustedGridY)) {
+                    this.drawPiecePreview(this.mainCtx, this.draggingPiece, adjustedGridX, adjustedGridY, '#00FF00');
+                } else {
+                    this.drawPiecePreview(this.mainCtx, this.draggingPiece, adjustedGridX, adjustedGridY, '#FF0000');
+                }
+            }
+
+            drawPiecePreview(ctx, piece, gridX, gridY, color) {
+                ctx.save();
+                ctx.globalAlpha = 0.6;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3;
+                ctx.fillStyle = color + '20';
+                
+                for (let y = 0; y < piece.shape.length; y++) {
+                    for (let x = 0; x < piece.shape[y].length; x++) {
+                        if (piece.shape[y][x] === 1) {
+                            const boardX = gridX + x;
+                            const boardY = gridY + y;
+                            
+                            if (boardX < this.boardSize && boardY < this.boardSize) {
+                                const cellX = boardX * this.cellSize;
+                                const cellY = boardY * this.cellSize;
+                                
+                                ctx.fillRect(cellX + 2, cellY + 2, this.cellSize - 4, this.cellSize - 4);
+                                ctx.strokeRect(cellX + 2, cellY + 2, this.cellSize - 4, this.cellSize - 4);
+                            }
+                        }
+                    }
+                }
+                ctx.restore();
+            }
+
+            drawMainBoard() {
+                this.mainCtx.clearRect(0, 0, this.mainCanvas.width, this.mainCanvas.height);
+                this.mainCtx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                this.mainCtx.fillRect(0, 0, this.mainCanvas.width, this.mainCanvas.height);
+                
+                for (let y = 0; y < this.boardSize; y++) {
+                    for (let x = 0; x < this.boardSize; x++) {
+                        this.drawCell(this.mainCtx, x, y, this.board[y][x]);
+                    }
+                }
+                
+                this.mainCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                this.mainCtx.lineWidth = 1;
+                for (let i = 0; i <= this.boardSize; i++) {
+                    this.mainCtx.beginPath();
+                    this.mainCtx.moveTo(i * this.cellSize, 0);
+                    this.mainCtx.lineTo(i * this.cellSize, this.boardSize * this.cellSize);
+                    this.mainCtx.stroke();
+                    
+                    this.mainCtx.beginPath();
+                    this.mainCtx.moveTo(0, i * this.cellSize);
+                    this.mainCtx.lineTo(this.boardSize * this.cellSize, i * this.cellSize);
+                    this.mainCtx.stroke();
+                }
+            }
+
+            drawCell(ctx, x, y, cell) {
+                const cellX = x * this.cellSize;
+                const cellY = y * this.cellSize;
+                
+                if (cell !== 0) {
+                    ctx.fillStyle = cell.color;
+                    ctx.fillRect(cellX + 1, cellY + 1, this.cellSize - 2, this.cellSize - 2);
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(cellX + 1, cellY + 1, this.cellSize - 2, this.cellSize - 2);
+                }
+            }
+
+            drawCurrentPieces() {
+                this.currentCtx.clearRect(0, 0, this.currentCanvas.width, this.currentCanvas.height);
+                this.currentCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                this.currentCtx.fillRect(0, 0, this.currentCanvas.width, this.currentCanvas.height);
+                
+                const pieceWidth = this.currentCanvas.width / 3;
+                const blockSize = Math.min(pieceWidth / 5, this.currentCanvas.height / 3);
+                
+                for (let i = 0; i < this.currentPieces.length; i++) {
+                    const piece = this.currentPieces[i];
+                    const baseX = pieceWidth * i + pieceWidth / 2;
+                    const baseY = this.currentCanvas.height / 2;
+                    this.drawPiece(this.currentCtx, piece, baseX, baseY, blockSize, false);
+                }
+            }
+
+            drawNextPieces() {
+                this.nextCtx.clearRect(0, 0, this.nextCanvas.width, this.nextCanvas.height);
+                this.nextCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                this.nextCtx.fillRect(0, 0, this.nextCanvas.width, this.nextCanvas.height);
+                
+                const isMobile = window.innerWidth < 768;
+                const pieceWidth = this.nextCanvas.width / 3;
+                const pieceHeight = this.nextCanvas.height;
+                const blockSize = isMobile ? 
+                    Math.min(pieceWidth / 4, pieceHeight / 3) : 
+                    Math.min(pieceWidth / 5, pieceHeight / 3);
+                
+                for (let i = 0; i < this.nextPieces.length; i++) {
+                    const piece = this.nextPieces[i];
+                    const baseX = pieceWidth * i + pieceWidth / 2;
+                    const baseY = pieceHeight / 2;
+                    this.drawPiece(this.nextCtx, piece, baseX, baseY, blockSize, false);
+                }
+            }
+
+            drawPiece(ctx, piece, baseX, baseY, blockSize, isDragging) {
+                if (isDragging) ctx.globalAlpha = 0.8;
+                
+                const offsetX = - (piece.shape[0].length * blockSize) / 2;
+                const offsetY = - (piece.shape.length * blockSize) / 2;
+                
+                for (let y = 0; y < piece.shape.length; y++) {
+                    for (let x = 0; x < piece.shape[y].length; x++) {
+                        if (piece.shape[y][x] === 1) {
+                            const blockX = baseX + offsetX + x * blockSize;
+                            const blockY = baseY + offsetY + y * blockSize;
+                            
+                            ctx.fillStyle = piece.color;
+                            ctx.fillRect(blockX, blockY, blockSize - 2, blockSize - 2);
+                            ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+                            ctx.lineWidth = 1;
+                            ctx.strokeRect(blockX, blockY, blockSize - 2, blockSize - 2);
+                        }
+                    }
+                }
+                
+                if (isDragging) ctx.globalAlpha = 1.0;
+            }
+
+            updateUI() {
+                document.getElementById('score').textContent = this.score;
+                document.getElementById('lines').textContent = this.lines;
+                document.getElementById('level').textContent = this.level;
+                document.getElementById('blocksPlaced').textContent = this.blocksPlaced;
+            }
+
+            gameOver() {
+                this.gameState = 'gameOver';
+                this.playSound(this.gameOverSound);
+                this.backgroundMusic.pause();
+                document.getElementById('finalScore').textContent = this.score;
+                document.getElementById('finalLines').textContent = this.lines;
+                document.getElementById('gameOverScreen').classList.remove('hidden');
+            }
+
+            start() {
+                this.gameState = 'playing';
+                document.getElementById('startScreen').classList.add('hidden');
+                if (this.musicEnabled) this.backgroundMusic.play();
+                this.draw();
+            }
+
+            reset() {
+                this.score = 0;
+                this.lines = 0;
+                this.level = 1;
+                this.blocksPlaced = 0;
+                this.resetDrag();
+                this.init();
+                this.draw();
+            }
         }
-        
-        if (isDragging) ctx.globalAlpha = 1.0;
-    }
 
-    updateUI() {
-        document.getElementById('score').textContent = this.score;
-        document.getElementById('lines').textContent = this.lines;
-        document.getElementById('level').textContent = this.level;
-        document.getElementById('blocksPlaced').textContent = this.blocksPlaced;
-    }
+        // Funciones globales
+        let blockGame;
 
-    gameOver() {
-        this.gameState = 'gameOver';
-        this.playSound(this.gameOverSound);
-        this.backgroundMusic.pause();
-        document.getElementById('finalScore').textContent = this.score;
-        document.getElementById('finalLines').textContent = this.lines;
-        document.getElementById('gameOverScreen').classList.remove('hidden');
-    }
+        function startGame() {
+            blockGame = new BlockPuzzleGame();
+            blockGame.start();
+        }
 
-    start() {
-        this.gameState = 'playing';
-        document.getElementById('startScreen').classList.add('hidden');
-        if (this.musicEnabled) this.backgroundMusic.play();
-        this.draw();
-    }
+        function restartGame() {
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            startGame();
+        }
 
-    reset() {
-        this.score = 0;
-        this.lines = 0;
-        this.level = 1;
-        this.blocksPlaced = 0;
-        this.resetDrag();
-        this.init();
-        this.draw();
-    }
-}
+        function rotatePiece(index) {
+            if (blockGame) blockGame.rotatePiece(index);
+        }
 
-// Funciones globales
-let blockGame;
+        function resetGame() {
+            if (blockGame) {
+                blockGame.reset();
+                blockGame.start();
+            }
+        }
 
-function startGame() {
-    blockGame = new BlockPuzzleGame();
-    blockGame.start();
-}
+        function toggleMusic() {
+            if (blockGame) blockGame.toggleMusic();
+        }
 
-function restartGame() {
-    document.getElementById('gameOverScreen').classList.add('hidden');
-    startGame();
-}
-
-function rotatePiece(index) {
-    if (blockGame) blockGame.rotatePiece(index);
-}
-
-function resetGame() {
-    if (blockGame) {
-        blockGame.reset();
-        blockGame.start();
-    }
-}
-
-function toggleMusic() {
-    if (blockGame) blockGame.toggleMusic();
-}
-
-// Iniciar cuando se carga la página
-window.onload = function() {
-    blockGame = new BlockPuzzleGame();
-    document.getElementById('startScreen').classList.remove('hidden');
-};
+        // Iniciar cuando se carga la página
+        window.onload = function() {
+            blockGame = new BlockPuzzleGame();
+            document.getElementById('startScreen').classList.remove('hidden');
+        };
     </script>
 </body>
 </html>
