@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rapunzel Connect</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #ffcc00;
+      --secondary: #ff9966;
+      --accent: #cc66ff;
+      --dark: #2d1b69;
+      --darker: #1a0d4d;
+      --light: #fff9e6;
+      --danger: #ff3333;
+      --success: #66ff99;
+      --gold: #ffd700;
+      --purple: #9370db;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+      font-family: 'Cinzel', serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: var(--light);
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 20%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(204, 102, 255, 0.1) 0%, transparent 50%),
+        url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path fill="%239370db" opacity="0.1" d="M50,20 C65,20 77,32 77,47 C77,62 65,74 50,74 C35,74 23,62 23,47 C23,32 35,20 50,20 Z"/></svg>');
+      z-index: -1;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+      width: 100%;
+      position: relative;
+    }
+
+    h1 {
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      margin: 0 0 10px 0;
+      color: var(--gold);
+      text-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+      letter-spacing: 3px;
+      font-weight: 700;
+      font-family: 'Dancing Script', cursive;
+      position: relative;
+      display: inline-block;
+    }
+
+    h1::before, h1::after {
+      content: "✦";
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gold);
+      font-size: 1.5rem;
+    }
+
+    h1::before {
+      left: -40px;
+    }
+
+    h1::after {
+      right: -40px;
+    }
+
+    .subtitle {
+      font-size: clamp(1rem, 3vw, 1.3rem);
+      margin: 0 0 20px 0;
+      color: #d8c3ff;
+      font-family: 'Dancing Script', cursive;
+    }
+
+    .game-info {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 20px;
+      background: rgba(45, 27, 105, 0.7);
+      padding: 15px 25px;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+      border: 2px solid var(--purple);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .game-info::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, transparent 30%, rgba(255, 215, 0, 0.1) 50%, transparent 70%);
+      z-index: 0;
+    }
+
+    .timer-container, .score-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 1;
+      position: relative;
+    }
+
+    .timer-label, .score-label {
+      font-size: 0.9rem;
+      color: #d8c3ff;
+      margin-bottom: 8px;
+      font-family: 'Dancing Script', cursive;
+      font-weight: bold;
+    }
+
+    #timer {
+      font-size: clamp(2.5rem, 6vw, 3.5rem);
+      font-weight: bold;
+      color: var(--gold);
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
+      transition: all 0.3s ease;
+    }
+
+    #score {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: bold;
+      color: var(--accent);
+      text-shadow: 0 0 10px rgba(204, 102, 255, 0.5);
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      grid-template-rows: repeat(6, 1fr);
+      gap: 6px;
+      width: 100%;
+      max-width: 500px;
+      aspect-ratio: 1 / 1;
+      margin: 0 auto;
+      user-select: none;
+      touch-action: none;
+      background: rgba(45, 27, 105, 0.5);
+      padding: 15px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      border: 2px solid var(--purple);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #board::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 30% 30%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 70% 70%, rgba(204, 102, 255, 0.1) 0%, transparent 50%);
+      z-index: -1;
+    }
+
+    .cell {
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      background-size: cover;
+      background-position: center;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+    }
+
+    .cell::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .selected {
+      transform: scale(1.1);
+      box-shadow: 0 0 20px currentColor;
+      z-index: 10;
+    }
+
+    .selected::after {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .connection-line {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.7);
+      transform-origin: 0 0;
+      z-index: 5;
+      pointer-events: none;
+      height: 6px;
+      border-radius: 3px;
+    }
+
+    .pop {
+      animation: pop 0.3s ease-out forwards;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.7; }
+      100% { transform: scale(0); opacity: 0; }
+    }
+
+    .loop-effect {
+      animation: loopGlow 0.8s ease-out;
+    }
+
+    @keyframes loopGlow {
+      0% { box-shadow: 0 0 5px var(--success), 0 0 10px var(--success); }
+      50% { box-shadow: 0 0 30px var(--success), 0 0 60px var(--success); }
+      100% { box-shadow: 0 0 5px var(--success), 0 0 10px var(--success); }
+    }
+
+    .instructions {
+      margin-top: 25px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #d8c3ff;
+      max-width: 500px;
+      line-height: 1.6;
+      background: rgba(45, 27, 105, 0.5);
+      padding: 15px;
+      border-radius: 15px;
+      border: 1px solid var(--purple);
+    }
+
+    .game-over {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(26, 13, 77, 0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+
+    .game-over.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .game-over-content {
+      background: linear-gradient(135deg, var(--dark) 0%, var(--darker) 100%);
+      padding: 40px;
+      border-radius: 25px;
+      text-align: center;
+      max-width: 90%;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+      border: 3px solid var(--gold);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .game-over-content::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path fill="%23ffd700" opacity="0.1" d="M50,20 C65,20 77,32 77,47 C77,62 65,74 50,74 C35,74 23,62 23,47 C23,32 35,20 50,20 Z"/></svg>');
+      z-index: -1;
+    }
+
+    .game-over h2 {
+      color: var(--gold);
+      margin-top: 0;
+      font-family: 'Dancing Script', cursive;
+      font-size: 2.5rem;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+
+    .restart-btn {
+      background: linear-gradient(to right, var(--gold), var(--secondary));
+      border: none;
+      color: var(--darker);
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      border-radius: 50px;
+      cursor: pointer;
+      margin-top: 25px;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+      font-family: 'Cinzel', serif;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .restart-btn::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.5s;
+    }
+
+    .restart-btn:hover::before {
+      left: 100%;
+    }
+
+    .restart-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(255, 215, 0, 0.6);
+    }
+
+    /* Efectos para dispositivos móviles */
+    @media (max-width: 600px) {
+      .container {
+        padding: 15px;
+      }
+      
+      #board {
+        gap: 4px;
+        padding: 10px;
+      }
+      
+      .game-info {
+        flex-direction: column;
+        gap: 20px;
+        align-items: center;
+      }
+    }
+
+    /* Efectos para pantallas muy pequeñas */
+    @media (max-width: 400px) {
+      #board {
+        gap: 3px;
+      }
+      
+      h1::before, h1::after {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>Rapunzel Connect</h1>
+    <p class="subtitle">Conecta las imágenes iguales para ganar tiempo</p>
+  </div>
+
+  <div class="game-info">
+    <div class="timer-container">
+      <div class="timer-label">TIEMPO</div>
+      <div id="timer">5</div>
+    </div>
+    <div class="score-container">
+      <div class="score-label">PUNTUACIÓN</div>
+      <div id="score">0</div>
+    </div>
+  </div>
+
+  <div id="board"></div>
+
+  <div class="instructions">
+    <p>Conecta al menos 2 imágenes del mismo tipo. Las conexiones normales te dan +2 segundos (máximo 10). Los bucles (conexiones circulares) te dan +5 segundos (máximo 10).</p>
+  </div>
+</div>
+
+<div class="game-over" id="gameOver">
+  <div class="game-over-content">
+    <h2>¡Fin del Juego!</h2>
+    <p>Tu puntuación final: <span id="finalScore">0</span></p>
+    <button class="restart-btn" id="restartBtn">Jugar de Nuevo</button>
+  </div>
+</div>
+
+<script>
+  // --------------------------
+  //   CONFIGURACIÓN DEL JUEGO
+  // --------------------------
+
+  const boardEl = document.getElementById("board");
+  const timerEl = document.getElementById("timer");
+  const scoreEl = document.getElementById("score");
+  const gameOverEl = document.getElementById("gameOver");
+  const finalScoreEl = document.getElementById("finalScore");
+  const restartBtn = document.getElementById("restartBtn");
+
+  const colors = ["red", "blue", "yellow", "orange", "green"];
+
+  // IMÁGENES DE RAPUNZEL SEGÚN COLOR
+  function getImage(color) {
+    return {
+      red:    "url('./img/img1.jpeg')",
+      blue:   "url('./img/img2.jpeg')",
+      yellow: "url('./img/img3.jpeg')",
+      orange: "url('./img/img4.jpg')",
+      green:  "url('./img/img5.jpeg')" 
+    }[color];
+  }
+  
+  function randomColor() {
+    return colors[Math.floor(Math.random() * colors.length)];
+  }
+
+  let grid = [];
+  let size = 6;
+  let selectedCells = [];
+  let isMouseDown = false;
+  let score = 0;
+  let gameActive = true;
+
+  // --------------------------
+  //   CREAR TABLERO
+  // --------------------------
+  function createBoard() {
+    boardEl.innerHTML = "";
+    grid = [];
+
+    for (let r = 0; r < size; r++) {
+      grid[r] = [];
+      for (let c = 0; c < size; c++) {
+        const div = document.createElement("div");
+        div.classList.add("cell");
+
+        const color = randomColor();
+        div.dataset.color = color;
+        div.style.backgroundImage = getImage(color);
+        div.dataset.row = r;
+        div.dataset.col = c;
+
+        boardEl.appendChild(div);
+        grid[r][c] = div;
+      }
+    }
+  }
+
+  createBoard();
+
+  // --------------------------
+  //   MANEJO DE SELECCIÓN
+  // --------------------------
+  function isAdjacent(a, b) {
+    return Math.abs(a.dataset.row - b.dataset.row) +
+           Math.abs(a.dataset.col - b.dataset.col) === 1;
+  }
+
+  function highlightCells() {
+    document.querySelectorAll(".cell").forEach(c => c.classList.remove("selected"));
+    selectedCells.forEach(c => c.classList.add("selected"));
+    
+    // Dibujar líneas de conexión
+    drawConnectionLines();
+  }
+
+  function drawConnectionLines() {
+    // Eliminar líneas anteriores
+    document.querySelectorAll(".connection-line").forEach(line => line.remove());
+    
+    // Dibujar nuevas líneas
+    for (let i = 0; i < selectedCells.length - 1; i++) {
+      const current = selectedCells[i];
+      const next = selectedCells[i + 1];
+      
+      const rect1 = current.getBoundingClientRect();
+      const rect2 = next.getBoundingClientRect();
+      
+      const boardRect = boardEl.getBoundingClientRect();
+      
+      const x1 = rect1.left + rect1.width / 2 - boardRect.left;
+      const y1 = rect1.top + rect1.height / 2 - boardRect.top;
+      const x2 = rect2.left + rect2.width / 2 - boardRect.left;
+      const y2 = rect2.top + rect2.height / 2 - boardRect.top;
+      
+      const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+      const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+      
+      const line = document.createElement("div");
+      line.classList.add("connection-line");
+      line.style.width = `${length}px`;
+      line.style.left = `${x1}px`;
+      line.style.top = `${y1}px`;
+      line.style.transform = `rotate(${angle}deg)`;
+      line.style.backgroundColor = getComputedStyle(current).boxShadowColor || "rgba(255, 255, 255, 0.7)";
+      
+      boardEl.appendChild(line);
+    }
+  }
+
+  function clearHighlights() {
+    document.querySelectorAll(".cell").forEach(c => c.classList.remove("selected"));
+    document.querySelectorAll(".connection-line").forEach(line => line.remove());
+  }
+
+  // Eventos para mouse
+  boardEl.addEventListener("mousedown", e => {
+    if (!gameActive) return;
+    if (!e.target.classList.contains("cell")) return;
+    isMouseDown = true;
+
+    selectedCells = [e.target];
+    highlightCells();
+  });
+
+  boardEl.addEventListener("mousemove", e => {
+    if (!gameActive) return;
+    if (!isMouseDown || !e.target.classList.contains("cell")) return;
+
+    const cell = e.target;
+    const last = selectedCells[selectedCells.length - 1];
+
+    if (cell === last) return;
+
+    // RETROCESO
+    if (selectedCells.length >= 2 && cell === selectedCells[selectedCells.length - 2]) {
+      selectedCells.pop();
+      highlightCells();
+      return;
+    }
+
+    // MISMO COLOR + ADYACENTE
+    if (cell.dataset.color === last.dataset.color && isAdjacent(cell, last)) {
+
+      // DETECTAR BUCLE
+      if (selectedCells.includes(cell)) {
+        selectedCells.push(cell);
+        highlightCells();
+        return;
+      }
+
+      selectedCells.push(cell);
+      highlightCells();
+    }
+  });
+
+  document.addEventListener("mouseup", () => {
+    if (!gameActive) return;
+    if (isMouseDown) finishConnection();
+    isMouseDown = false;
+  });
+
+  // Eventos para pantallas táctiles
+  boardEl.addEventListener("touchstart", e => {
+    if (!gameActive) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+    if (target && target.classList.contains("cell")) {
+      isMouseDown = true;
+      selectedCells = [target];
+      highlightCells();
+    }
+  });
+
+  boardEl.addEventListener("touchmove", e => {
+    if (!gameActive) return;
+    if (!isMouseDown) return;
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+    if (target && target.classList.contains("cell")) {
+      const cell = target;
+      const last = selectedCells[selectedCells.length - 1];
+
+      if (cell === last) return;
+
+      // RETROCESO
+      if (selectedCells.length >= 2 && cell === selectedCells[selectedCells.length - 2]) {
+        selectedCells.pop();
+        highlightCells();
+        return;
+      }
+
+      // MISMO COLOR + ADYACENTE
+      if (cell.dataset.color === last.dataset.color && isAdjacent(cell, last)) {
+
+        // DETECTAR BUCLE
+        if (selectedCells.includes(cell)) {
+          selectedCells.push(cell);
+          highlightCells();
+          return;
+        }
+
+        selectedCells.push(cell);
+        highlightCells();
+      }
+    }
+  });
+
+  document.addEventListener("touchend", () => {
+    if (!gameActive) return;
+    if (isMouseDown) finishConnection();
+    isMouseDown = false;
+  });
+
+  // --------------------------
+  //   FINALIZAR CONEXIÓN
+  // --------------------------
+  function finishConnection() {
+    if (selectedCells.length < 2) {
+      selectedCells = [];
+      clearHighlights();
+      return;
+    }
+
+    const first = selectedCells[0];
+    const last = selectedCells[selectedCells.length - 1];
+    const isLoop = selectedCells.length >= 4 && first === last;
+
+    let time = parseInt(timerEl.textContent);
+    let points = 0;
+
+    if (isLoop) {
+      // BUCLE = +5 (máx 10)
+      time = Math.min(time + 5, 10);
+      points = selectedCells.length * 5; // Más puntos por bucle
+      
+      // Efecto especial para bucles
+      boardEl.classList.add("loop-effect");
+      setTimeout(() => {
+        boardEl.classList.remove("loop-effect");
+      }, 800);
+    } else {
+      // NORMAL = +2 (máx 10)
+      time = Math.min(time + 2, 10);
+      points = selectedCells.length * 2;
+    }
+
+    timerEl.textContent = time;
+    score += points;
+    scoreEl.textContent = score;
+
+    // Efecto visual para el temporizador
+    timerEl.style.transform = "scale(1.2)";
+    setTimeout(() => {
+      timerEl.style.transform = "scale(1)";
+    }, 300);
+
+    // POP Y RENOVAR PIEZAS
+    selectedCells.forEach(cell => {
+      cell.classList.add("pop");
+      setTimeout(() => {
+        const newColor = randomColor();
+        cell.dataset.color = newColor;
+        cell.style.backgroundImage = getImage(newColor);
+        cell.classList.remove("pop");
+      }, 150);
+    });
+
+    selectedCells = [];
+    clearHighlights();
+  }
+
+  // --------------------------
+  //   TEMPORIZADOR
+  // --------------------------
+  function startTimer() {
+    let time = 5;
+    timerEl.textContent = time;
+
+    const timerInterval = setInterval(() => {
+      if (!gameActive) {
+        clearInterval(timerInterval);
+        return;
+      }
+      
+      time = parseInt(timerEl.textContent);
+
+      if (time > 0) {
+        timerEl.textContent = time - 1;
+        
+        // Cambiar color cuando queda poco tiempo
+        if (time <= 3) {
+          timerEl.style.color = "var(--danger)";
+          timerEl.style.textShadow = "0 0 10px rgba(255, 51, 51, 0.5)";
+        }
+      } else {
+        gameOver();
+        clearInterval(timerInterval);
+      }
+
+    }, 1000);
+  }
+
+  // --------------------------
+  //   FIN DEL JUEGO
+  // --------------------------
+  function gameOver() {
+    gameActive = false;
+    finalScoreEl.textContent = score;
+    gameOverEl.classList.add("active");
+  }
+
+  restartBtn.addEventListener("click", () => {
+    location.reload();
+  });
+
+  // Iniciar el juego
+  startTimer();
+</script>
+
+</body>
+</html>
