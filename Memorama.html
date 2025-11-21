@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Memorama Rapunzel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #ffcc00;
+      --secondary: #ff9966;
+      --accent: #cc66ff;
+      --dark: #2d1b69;
+      --darker: #1a0d4d;
+      --light: #fff9e6;
+      --danger: #ff3333;
+      --success: #66ff99;
+      --gold: #ffd700;
+      --purple: #9370db;
+      --glass: rgba(255, 255, 255, 0.03);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+      font-family: 'Cinzel', serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: var(--light);
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 20%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(204, 102, 255, 0.1) 0%, transparent 50%),
+        url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path fill="%239370db" opacity="0.1" d="M50,20 C65,20 77,32 77,47 C77,62 65,74 50,74 C35,74 23,62 23,47 C23,32 35,20 50,20 Z"/></svg>');
+      z-index: -1;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+      width: 100%;
+      position: relative;
+    }
+
+    h1 {
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      margin: 0 0 10px 0;
+      color: var(--gold);
+      text-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+      letter-spacing: 3px;
+      font-weight: 700;
+      font-family: 'Dancing Script', cursive;
+      position: relative;
+      display: inline-block;
+    }
+
+    h1::before, h1::after {
+      content: "✦";
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gold);
+      font-size: 1.5rem;
+    }
+
+    h1::before {
+      left: -40px;
+    }
+
+    h1::after {
+      right: -40px;
+    }
+
+    .subtitle {
+      font-size: clamp(1rem, 3vw, 1.3rem);
+      margin: 0 0 20px 0;
+      color: #d8c3ff;
+      font-family: 'Dancing Script', cursive;
+    }
+
+    .game-container {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 20px;
+    }
+
+    .controls-panel {
+      background: linear-gradient(180deg, var(--dark), rgba(255, 255, 255, 0.02));
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 8px 30px rgba(2, 6, 23, 0.7);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .game-board {
+      background: linear-gradient(180deg, var(--dark), rgba(255, 255, 255, 0.02));
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 8px 30px rgba(2, 6, 23, 0.7);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .stat-card {
+      background: var(--glass);
+      padding: 12px;
+      border-radius: 12px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--gold);
+      margin: 5px 0;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: #d8c3ff;
+    }
+
+    .timer-critical {
+      animation: pulse 1s infinite;
+      color: var(--danger) !important;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 12px 15px;
+      border-radius: 10px;
+      color: var(--light);
+      cursor: pointer;
+      font-family: 'Cinzel', serif;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .btn.primary {
+      background: linear-gradient(90deg, var(--gold), var(--secondary));
+      color: var(--darker);
+      border: none;
+      font-weight: bold;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn:disabled:hover {
+      background: transparent;
+    }
+
+    .powerups {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .powerup {
+      background: rgba(147, 112, 219, 0.2);
+      border: 1px solid var(--purple);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .powerup:hover {
+      background: rgba(147, 112, 219, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .powerup:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .powerup-icon {
+      font-size: 1.5rem;
+      margin-bottom: 5px;
+    }
+
+    .powerup-name {
+      font-size: 0.8rem;
+      color: var(--light);
+    }
+
+    .powerup-cost {
+      font-size: 0.7rem;
+      color: var(--gold);
+    }
+
+    #board {
+      display: grid;
+      gap: 10px;
+      justify-items: center;
+      align-items: center;
+      padding: 10px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), transparent);
+      border-radius: 15px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      flex-grow: 1;
+    }
+
+    .card {
+      width: 100%;
+      aspect-ratio: 1/1;
+      perspective: 1000px;
+      cursor: pointer;
+    }
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 500ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(2, 6, 23, 0.6);
+    }
+
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .face {
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+
+    .face.back {
+      background: linear-gradient(135deg, var(--purple) 0%, var(--dark) 100%);
+      color: var(--light);
+      transform: rotateY(0);
+      box-shadow: inset 0 -6px 18px rgba(0, 0, 0, 0.4);
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .face.front {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+      transform: rotateY(180deg);
+      font-size: 32px;
+    }
+
+    .face.front .emoji {
+      font-size: 36px;
+    }
+
+    .card.matched {
+      transform: rotateY(180deg);
+    }
+
+    .card.matched .card-front::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(102, 255, 153, 0.3);
+      border-radius: 12px;
+    }
+
+    .match-glow {
+      box-shadow: 0 0 20px rgba(125, 211, 252, 0.3), 0 0 40px rgba(255, 184, 107, 0.1) inset;
+    }
+
+    .pulse {
+      animation: pulse 900ms ease-out;
+    }
+
+    /* Grid sizes */
+    .grid-4 {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .grid-6 {
+      grid-template-columns: repeat(6, 1fr);
+    }
+
+    .grid-8 {
+      grid-template-columns: repeat(8, 1fr);
+    }
+
+    /* Game over modal */
+    .game-over {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(26, 13, 77, 0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+
+    .game-over.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .game-over-content {
+      background: linear-gradient(135deg, var(--dark) 0%, var(--darker) 100%);
+      padding: 40px;
+      border-radius: 25px;
+      text-align: center;
+      max-width: 90%;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+      border: 3px solid var(--gold);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .game-over-content::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path fill="%23ffd700" opacity="0.1" d="M50,20 C65,20 77,32 77,47 C77,62 65,74 50,74 C35,74 23,62 23,47 C23,32 35,20 50,20 Z"/></svg>');
+      z-index: -1;
+    }
+
+    .game-over h2 {
+      color: var(--gold);
+      margin-top: 0;
+      font-family: 'Dancing Script', cursive;
+      font-size: 2.5rem;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+
+    .result-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .result-stat {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    .result-value {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: var(--gold);
+      margin: 5px 0;
+    }
+
+    .result-label {
+      font-size: 0.9rem;
+      color: #d8c3ff;
+    }
+
+    /* Responsive */
+    @media (max-width: 968px) {
+      .game-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+      }
+      
+      .controls-panel {
+        order: 2;
+      }
+      
+      .game-board {
+        order: 1;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 10px;
+      }
+      
+      #board {
+        gap: 8px;
+        padding: 8px;
+      }
+      
+      .stats-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .powerups {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 400px) {
+      #board {
+        gap: 5px;
+      }
+      
+      h1::before, h1::after {
+        display: none;
+      }
+    }
+
+    /* Effects */
+    .time-bonus {
+      animation: timeBonus 1s ease-out;
+    }
+
+    @keyframes timeBonus {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); color: var(--success); }
+      100% { transform: scale(1); }
+    }
+
+    .freeze-effect {
+      animation: freeze 2s linear;
+    }
+
+    @keyframes freeze {
+      0% { filter: hue-rotate(0deg) brightness(1); }
+      100% { filter: hue-rotate(180deg) brightness(1.2); }
+    }
+
+    .shuffle-effect {
+      animation: shuffle 0.5s ease-in-out;
+    }
+
+    @keyframes shuffle {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(5px); }
+      75% { transform: translateX(-5px); }
+    }
+
+    .level-up {
+      animation: levelUp 0.5s ease-out;
+    }
+
+    @keyframes levelUp {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>Memorama Rapunzel</h1>
+    <p class="subtitle">¡Encuentra todas las parejas antes de que se acabe el tiempo!</p>
+  </div>
+
+  <div class="game-container">
+    <div class="controls-panel">
+      <div class="stats-container">
+        <div class="stat-card">
+          <div class="stat-label">Tiempo</div>
+          <div class="stat-value" id="timer">02:00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Movimientos</div>
+          <div class="stat-value" id="moves">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Parejas</div>
+          <div class="stat-value" id="matches">0/8</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Puntos</div>
+          <div class="stat-value" id="score">0</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn primary" id="btn-restart">
+          <span>🔁</span> Reiniciar Juego
+        </button>
+        
+        <div class="powerups">
+          <button class="powerup" id="powerup-time">
+            <div class="powerup-icon">⏱️</div>
+            <div class="powerup-name">+15 Segundos</div>
+            <div class="powerup-cost">50 pts</div>
+          </button>
+          <button class="powerup" id="powerup-freeze">
+            <div class="powerup-icon">❄️</div>
+            <div class="powerup-name">Congelar Tiempo</div>
+            <div class="powerup-cost">100 pts</div>
+          </button>
+          <button class="powerup" id="powerup-reveal">
+            <div class="powerup-icon">👁️</div>
+            <div class="powerup-name">Revelar Parejas</div>
+            <div class="powerup-cost">75 pts</div>
+          </button>
+          <button class="powerup" id="powerup-shuffle">
+            <div class="powerup-icon">🔀</div>
+            <div class="powerup-name">Revolver Cartas</div>
+            <div class="powerup-cost">60 pts</div>
+          </button>
+        </div>
+
+        <select class="btn" id="difficulty">
+          <option value="120">Fácil (2:00)</option>
+          <option value="90">Normal (1:30)</option>
+          <option value="60">Difícil (1:00)</option>
+        </select>
+
+        <button class="btn" id="btn-sound">
+          <span>🔊</span> Sonido: Activado
+        </button>
+      </div>
+    </div>
+
+    <div class="game-board">
+      <div id="board" class="board grid-4"></div>
+    </div>
+  </div>
+</div>
+
+<div class="game-over" id="gameOver">
+  <div class="game-over-content">
+    <h2 id="gameOverTitle">¡Tiempo Agotado!</h2>
+    <p id="gameOverMessage">No lograste encontrar todas las parejas a tiempo.</p>
+    
+    <div class="result-stats">
+      <div class="result-stat">
+        <div class="result-label">Puntuación Final</div>
+        <div class="result-value" id="finalScore">0</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-label">Parejas Encontradas</div>
+        <div class="result-value" id="finalMatches">0/8</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-label">Movimientos</div>
+        <div class="result-value" id="finalMoves">0</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-label">Tiempo Restante</div>
+        <div class="result-value" id="finalTime">00:00</div>
+      </div>
+    </div>
+    
+    <button class="btn primary" id="btn-play-again">Jugar de Nuevo</button>
+  </div>
+</div>
+
+<script>
+  // --------------------------
+  //   CONFIGURACIÓN DEL JUEGO
+  // --------------------------
+
+  // Elementos del DOM
+  const boardEl = document.getElementById('board');
+  const timerEl = document.getElementById('timer');
+  const movesEl = document.getElementById('moves');
+  const matchesEl = document.getElementById('matches');
+  const scoreEl = document.getElementById('score');
+  const btnRestart = document.getElementById('btn-restart');
+  const btnSound = document.getElementById('btn-sound');
+  const difficultySel = document.getElementById('difficulty');
+  const gameOverEl = document.getElementById('gameOver');
+  const gameOverTitle = document.getElementById('gameOverTitle');
+  const gameOverMessage = document.getElementById('gameOverMessage');
+  const finalScoreEl = document.getElementById('finalScore');
+  const finalMatchesEl = document.getElementById('finalMatches');
+  const finalMovesEl = document.getElementById('finalMoves');
+  const finalTimeEl = document.getElementById('finalTime');
+  const btnPlayAgain = document.getElementById('btn-play-again');
+
+  // Power-ups
+  const powerupTime = document.getElementById('powerup-time');
+  const powerupFreeze = document.getElementById('powerup-freeze');
+  const powerupReveal = document.getElementById('powerup-reveal');
+  const powerupShuffle = document.getElementById('powerup-shuffle');
+
+  // Emojis temáticos de Rapunzel
+  const EMOJIS = [
+    '👑', '🏰', '🌸', '🦎', '🐎', '🪞', '💇', '🎨', 
+    '🕯️', '📖', '🎵', '💫', '🌅', '🌙', '🌟', '💖',
+    '🦔', '🗡️', '👸', '🤴', '💎', '🔮', '🌹', '🎪'
+  ];
+
+  // Estado del juego
+  let cards = [];
+  let firstCard = null, secondCard = null;
+  let lockBoard = false;
+  let moves = 0;
+  let matches = 0;
+  let pairs = 8;
+  let timeLeft = 120;
+  let timerInterval = null;
+  let score = 0;
+  let soundOn = true;
+  let gameActive = false;
+  let freezeTime = false;
+
+  // Costos de power-ups
+  const POWERUP_COSTS = {
+    time: 50,
+    freeze: 100,
+    reveal: 75,
+    shuffle: 60
+  };
+
+  // Inicializar el juego
+  function initGame() {
+    const difficulty = parseInt(difficultySel.value);
+    timeLeft = difficulty;
+    updateTimerDisplay();
+    
+    buildBoard(pairs);
+    updatePowerups();
+  }
+
+  // Construir el tablero
+  function buildBoard(pairCount) {
+    pairs = pairCount;
+    cards = [];
+    firstCard = null;
+    secondCard = null;
+    lockBoard = false;
+    moves = 0;
+    matches = 0;
+    score = 0;
+    freezeTime = false;
+    
+    // Actualizar UI
+    movesEl.textContent = '0';
+    matchesEl.textContent = `0/${pairs}`;
+    scoreEl.textContent = '0';
+    
+    // Detener temporizador anterior
+    if (timerInterval) clearInterval(timerInterval);
+    gameActive = false;
+
+    // Limpiar tablero
+    boardEl.innerHTML = '';
+    
+    // Seleccionar emojis aleatorios
+    const selectedEmojis = shuffleArray([...EMOJIS]).slice(0, pairCount);
+    const deck = shuffleArray([...selectedEmojis, ...selectedEmojis]);
+    
+    // Configurar grid
+    setGridClassByPairs(pairCount);
+
+    // Crear cartas
+    deck.forEach((emoji, index) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.setAttribute('data-id', index);
+      card.setAttribute('data-emoji', emoji);
+
+      const inner = document.createElement('div');
+      inner.className = 'card-inner';
+      
+      const back = document.createElement('div');
+      back.className = 'face back';
+      back.innerHTML = '<div>?</div>';
+      
+      const front = document.createElement('div');
+      front.className = 'face front';
+      front.innerHTML = `<div class="emoji">${emoji}</div>`;
+      
+      inner.appendChild(back);
+      inner.appendChild(front);
+      card.appendChild(inner);
+
+      card.addEventListener('click', () => onCardClick(card));
+      boardEl.appendChild(card);
+      cards.push(card);
+    });
+
+    // Ajustar tamaño de fuente
+    adjustCardFont();
+    
+    // Mostrar todas las cartas al inicio
+    showAllCardsInitially();
+  }
+
+  // Mostrar cartas al inicio
+  function showAllCardsInitially() {
+    cards.forEach(card => {
+      card.classList.add('flipped');
+    });
+
+    setTimeout(() => {
+      cards.forEach(card => {
+        card.classList.remove('flipped');
+      });
+      
+      // Iniciar juego después de la animación
+      setTimeout(() => {
+        gameActive = true;
+        startTimer();
+      }, 500);
+    }, 3000);
+  }
+
+  // Temporizador
+  function startTimer() {
+    timerInterval = setInterval(() => {
+      if (!freezeTime && timeLeft > 0) {
+        timeLeft--;
+        updateTimerDisplay();
+        
+        // Efecto visual cuando queda poco tiempo
+        if (timeLeft <= 10) {
+          timerEl.classList.add('timer-critical');
+        }
+        
+        if (timeLeft === 0) {
+          endGame(false);
+        }
+      }
+    }, 1000);
+  }
+
+  function updateTimerDisplay() {
+    const minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+    const seconds = (timeLeft % 60).toString().padStart(2, '0');
+    timerEl.textContent = `${minutes}:${seconds}`;
+  }
+
+  // Manejo de cartas
+  function onCardClick(card) {
+    if (!gameActive || lockBoard) return;
+    if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+    
+    // Voltear carta
+    card.classList.add('flipped');
+    playSound(440, 0.03);
+
+    if (!firstCard) {
+      firstCard = card;
+      return;
+    }
+    
+    secondCard = card;
+    lockBoard = true;
+    moves++;
+    movesEl.textContent = moves;
+
+    const emoji1 = firstCard.getAttribute('data-emoji');
+    const emoji2 = secondCard.getAttribute('data-emoji');
+    
+    if (emoji1 === emoji2) {
+      // Acierto
+      handleMatch();
+    } else {
+      // Fallo
+      handleMismatch();
+    }
+  }
+
+  function handleMatch() {
+    matches++;
+    matchesEl.textContent = `${matches}/${pairs}`;
+    
+    // Calcular puntos (más puntos por menos movimientos)
+    const pointsEarned = Math.max(10, 50 - moves);
+    score += pointsEarned;
+    scoreEl.textContent = score;
+    
+    firstCard.classList.add('matched', 'match-glow');
+    secondCard.classList.add('matched', 'match-glow');
+    
+    playSound(880, 0.08);
+    
+    setTimeout(() => {
+      lockBoard = false;
+      firstCard = null;
+      secondCard = null;
+      updatePowerups();
+      checkWin();
+    }, 500);
+  }
+
+  function handleMismatch() {
+    playSound(200, 0.06);
+    
+    setTimeout(() => {
+      firstCard.classList.remove('flipped');
+      secondCard.classList.remove('flipped');
+      firstCard = null;
+      secondCard = null;
+      lockBoard = false;
+    }, 1000);
+  }
+
+  // Verificar victoria
+  function checkWin() {
+    if (matches === pairs) {
+      // Bonus por tiempo restante
+      const timeBonus = timeLeft * 5;
+      score += timeBonus;
+      scoreEl.textContent = score;
+      
+      endGame(true);
+    }
+  }
+
+  function endGame(isWin) {
+    clearInterval(timerInterval);
+    gameActive = false;
+    
+    if (isWin) {
+      gameOverTitle.textContent = '¡Felicidades!';
+      gameOverMessage.textContent = 'Has encontrado todas las parejas.';
+    } else {
+      gameOverTitle.textContent = '¡Tiempo Agotado!';
+      gameOverMessage.textContent = 'No lograste encontrar todas las parejas a tiempo.';
+    }
+    
+    finalScoreEl.textContent = score;
+    finalMatchesEl.textContent = `${matches}/${pairs}`;
+    finalMovesEl.textContent = moves;
+    finalTimeEl.textContent = timerEl.textContent;
+    
+    gameOverEl.classList.add('active');
+  }
+
+  // Sistema de Power-ups
+  function updatePowerups() {
+    powerupTime.disabled = score < POWERUP_COSTS.time;
+    powerupFreeze.disabled = score < POWERUP_COSTS.freeze || freezeTime;
+    powerupReveal.disabled = score < POWERUP_COSTS.reveal;
+    powerupShuffle.disabled = score < POWERUP_COSTS.shuffle;
+  }
+
+  function usePowerupTime() {
+    if (score < POWERUP_COSTS.time) return;
+    
+    score -= POWERUP_COSTS.time;
+    scoreEl.textContent = score;
+    timeLeft += 15;
+    updateTimerDisplay();
+    
+    timerEl.classList.add('time-bonus');
+    setTimeout(() => timerEl.classList.remove('time-bonus'), 1000);
+    
+    playSound(660, 0.1);
+    updatePowerups();
+  }
+
+  function usePowerupFreeze() {
+    if (score < POWERUP_COSTS.freeze || freezeTime) return;
+    
+    score -= POWERUP_COSTS.freeze;
+    scoreEl.textContent = score;
+    freezeTime = true;
+    
+    document.body.classList.add('freeze-effect');
+    playSound(550, 0.2);
+    
+    setTimeout(() => {
+      freezeTime = false;
+      document.body.classList.remove('freeze-effect');
+    }, 5000);
+    
+    updatePowerups();
+  }
+
+  function usePowerupReveal() {
+    if (score < POWERUP_COSTS.reveal) return;
+    
+    score -= POWERUP_COSTS.reveal;
+    scoreEl.textContent = score;
+    
+    // Encontrar una pareja no descubierta
+    const unmatchedCards = cards.filter(card => 
+      !card.classList.contains('matched') && !card.classList.contains('flipped')
+    );
+    
+    if (unmatchedCards.length >= 2) {
+      // Mostrar brevemente una pareja
+      const card1 = unmatchedCards[0];
+      const card2 = unmatchedCards.find(card => 
+        card !== card1 && card.getAttribute('data-emoji') === card1.getAttribute('data-emoji')
+      );
+      
+      if (card2) {
+        card1.classList.add('flipped');
+        card2.classList.add('flipped');
+        
+        setTimeout(() => {
+          card1.classList.remove('flipped');
+          card2.classList.remove('flipped');
+        }, 2000);
+      }
+    }
+    
+    playSound(720, 0.1);
+    updatePowerups();
+  }
+
+  function usePowerupShuffle() {
+    if (score < POWERUP_COSTS.shuffle) return;
+    
+    score -= POWERUP_COSTS.shuffle;
+    scoreEl.textContent = score;
+    
+    // Revolver cartas no emparejadas
+    const unmatchedCards = cards.filter(card => !card.classList.contains('matched'));
+    const positions = unmatchedCards.map(card => {
+      const rect = card.getBoundingClientRect();
+      return { card, x: rect.left, y: rect.top };
+    });
+    
+    shuffleArray(unmatchedCards);
+    
+    unmatchedCards.forEach((card, index) => {
+      card.style.order = index;
+    });
+    
+    boardEl.classList.add('shuffle-effect');
+    setTimeout(() => boardEl.classList.remove('shuffle-effect'), 500);
+    
+    playSound(330, 0.15);
+    updatePowerups();
+  }
+
+  // Utilidades
+  function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+
+  function setGridClassByPairs(pairCount) {
+    boardEl.classList.remove('grid-4', 'grid-6', 'grid-8');
+    if (pairCount === 8) boardEl.classList.add('grid-4');
+    if (pairCount === 12) boardEl.classList.add('grid-6');
+    if (pairCount === 18) boardEl.classList.add('grid-8');
+  }
+
+  function adjustCardFont() {
+    const card = cards[0];
+    if (!card) return;
+    
+    const width = card.getBoundingClientRect().width;
+    const fontSize = Math.max(20, Math.min(48, Math.floor(width * 0.35)));
+    
+    document.querySelectorAll('.face.front .emoji').forEach(el => {
+      el.style.fontSize = fontSize + 'px';
+    });
+  }
+
+  // Sonido
+  function playSound(freq = 330, duration = 0.06) {
+    if (!soundOn) return;
+    
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.value = freq;
+      gainNode.gain.value = 0.02;
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + duration);
+    } catch (e) {
+      console.log("Error de audio:", e);
+    }
+  }
+
+  // Event Listeners
+  btnRestart.addEventListener('click', initGame);
+  btnPlayAgain.addEventListener('click', () => {
+    gameOverEl.classList.remove('active');
+    initGame();
+  });
+  difficultySel.addEventListener('change', initGame);
+
+  btnSound.addEventListener('click', () => {
+    soundOn = !soundOn;
+    btnSound.innerHTML = soundOn ? '<span>🔊</span> Sonido: Activado' : '<span>🔇</span> Sonido: Desactivado';
+  });
+
+  // Power-up events
+  powerupTime.addEventListener('click', usePowerupTime);
+  powerupFreeze.addEventListener('click', usePowerupFreeze);
+  powerupReveal.addEventListener('click', usePowerupReveal);
+  powerupShuffle.addEventListener('click', usePowerupShuffle);
+
+  // Ajustar fuentes al cambiar tamaño de ventana
+  window.addEventListener('resize', adjustCardFont);
+
+  // Iniciar juego
+  initGame();
+</script>
+
+</body>
+</html>

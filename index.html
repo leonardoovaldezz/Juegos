@@ -100,7 +100,7 @@
             <div class="desc">Clásico juego de romper ladrillos.</div>
           </div>
           <div class="actions">
-            <a class="game-link" href="Arkanoid.html" target="_blank" rel="noopener noreferrer" aria-label="Abrir Arkanoid"></a>
+            <a class="game-link" href="Arkanoid.html"  aria-label="Abrir Arkanoid"></a>
             <button class="btn play" onclick="openGame('Arkanoid.html')">Jugar</button>
             
           </div>
@@ -115,7 +115,7 @@
             <div class="desc">Snake con niveles y música.</div>
           </div>
           <div class="actions">
-            <a class="game-link" href="Snake.html" target="_blank" rel="noopener noreferrer"></a>
+            <a class="game-link" href="Snake.html" ></a>
             <button class="btn play" onclick="openGame('Snake.html')">Jugar</button>
             
           </div>
@@ -130,7 +130,7 @@
             <div class="desc">Salta lo más alto que puedas.</div>
           </div>
           <div class="actions">
-            <a class="game-link" href="Jump.html" target="_blank" rel="noopener noreferrer"></a>
+            <a class="game-link" href="Jump.html" ></a>
             <button class="btn play" onclick="openGame('Jump.html')">Jugar</button>
             
           </div>
@@ -145,7 +145,7 @@
             <div class="desc">Come puntos y evade fantasmas.</div>
           </div>
           <div class="actions">
-            <a class="game-link" href="PacMan.html" target="_blank" rel="noopener noreferrer"></a>
+            <a class="game-link" href="PacMan.html" ></a>
             <button class="btn play" onclick="openGame('PacMan.html')">Jugar</button>
             
           </div>
@@ -160,7 +160,7 @@
             <div class="desc">Minimax vs IA — 1 o 2 jugadores.</div>
           </div>
           <div class="actions">
-            <a class="game-link" href="./img/tictac.jpeg" target="_blank" rel="noopener noreferrer"></a>
+            <a class="game-link" href="./img/tictac.jpeg" ></a>
             <button class="btn play" onclick="openGame('TicTac.html')">Jugar</button>
             
           </div>
@@ -175,7 +175,7 @@
             <div class="desc">Sigue las instrucciones.</div>
           </div>
           <div class="actions">
-            <a class="game-link" href="Puzzle.html" target="_blank" rel="noopener noreferrer"></a>
+            <a class="game-link" href="Puzzle.html" ></a>
             <button class="btn play" onclick="openGame('Puzzle.html')">Jugar</button>
             
           </div>
@@ -190,7 +190,7 @@
             <div class="desc">Coloca las piezas y gana.</div>
           </div>
           <div class="actions">
-            <a class="game-link" href="Tetris.html" target="_blank" rel="noopener noreferrer"></a>
+            <a class="game-link" href="Tetris.html" ></a>
             <button class="btn play" onclick="openGame('Tetris.html')">Jugar</button>
             
           </div>
@@ -205,7 +205,7 @@
             <div class="desc">Haz la mejor puntuación.</div>
           </div>
           <div class="actions">
-            <a class="game-link" href="Conecta.html" target="_blank" rel="noopener noreferrer"></a>
+            <a class="game-link" href="Conecta.html" ></a>
             <button class="btn play" onclick="openGame('Conecta.html')">Jugar</button>
             
           </div>
@@ -220,7 +220,7 @@
             <div class="desc">Conecta 2 o más.</div>
           </div>
           <div class="actions">
-            <a class="game-link" href="Conecta.html" target="_blank" rel="noopener noreferrer"></a>
+            <a class="game-link" href="Conecta.html" ></a>
             <button class="btn play" onclick="openGame('Conecta.html')">Jugar</button>
             
           </div>
@@ -248,8 +248,7 @@
 
     // Abrir juego en nueva pestaña
     function openGame(path){
-      try{ window.open(path, '_blank'); }
-      catch(e){ window.location.href = path; }
+      window.location.href = path;
     }
 
     // Ordenar aleatorio
